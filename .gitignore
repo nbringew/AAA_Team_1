@@ -48,6 +48,9 @@ CLAUDE.md
 .cursor/
 .windsurf/
 
+# Data - raw large files (too big for GitHub)
+data/chicago_taxi_2025.csv
+
 # OS specific
 .DS_Store
 Thumbs.db

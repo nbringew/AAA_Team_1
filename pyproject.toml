@@ -12,6 +12,11 @@ dependencies = [
     "ipykernel>=6.20.0",
     "pyyaml>=6.0.0",
     "jupyter>=1.0.0",
+    "sodapy>=2.2.0",
+    "requests>=2.33.1",
+    "geopandas>=0.14.0",
+    "shapely>=2.0.0",
+    "pyarrow>=24.0.0",
 ]
 
 [tool.uv]
