@@ -49,7 +49,9 @@ CLAUDE.md
 .windsurf/
 
 # Data - raw large files (too big for GitHub)
+# Rohdaten und bereinigte Parquet-Dateien werden lokal generiert (siehe notebooks/00_data_loading.ipynb)
 data/chicago_taxi_2025.csv
+data/*.parquet
 
 # OS specific
 .DS_Store
