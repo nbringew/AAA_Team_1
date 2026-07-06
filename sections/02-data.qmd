@@ -1,0 +1,40 @@
+# Data
+
+## Data Sources
+
+We combine two data sources for the year 2025:
+
+- **Chicago Taxi Trips** — the full set of reported taxi trips, pulled from the City of Chicago Data Portal (Socrata API, dataset `ajtu-isnz`). Because the API caps the rows per request, trips are downloaded in weekly chunks with a checkpoint file, so an interrupted download can resume without re-fetching completed weeks. The raw file contains 6,825,838 trips.
+- **Weather data** — hourly temperature, precipitation, snowfall, wind and cloud cover for Chicago, from the Open-Meteo archive API, later used as exogenous features.
+
+## Cleaning Pipeline
+
+All cleaning is done on the raw taxi export in `notebooks/00_data_loading.ipynb`; the result is saved as a Parquet file for downstream use. The pipeline removes 9.1% of trips in total. Most steps are straightforward NA/outlier filters; the two steps below need more explanation because the underlying data quirks are easy to misinterpret.
+
+**1. Duplicates and IDs.** Before any other filtering, trips are deduplicated on `trip_id` (keeping the first occurrence). This has to happen first and separately from missing-ID handling: rows without a `trip_id` are set aside before deduplication, otherwise pandas would treat several trips that simply lack an ID as duplicates of each other and silently discard genuine trips.
+
+**2. Census Tract vs. Community Area.** Chicago reports location at two resolutions: `census_tract` (fine-grained, ~0.1 km²) and `community_area` (coarse, 77 zones covering the whole city). `census_tract` is missing for ~55% of trips — this is not random: the city masks the tract whenever too few trips occur in it, for privacy reasons. `community_area`, in contrast, is filled for ~91–97% of trips, making it the more reliable field for anything that needs full spatial coverage.
+
+A missing `community_area` (`CA = null`) means something different from a masked tract: it indicates the pickup or dropoff point lies **outside Chicago city limits**, since Chicago only assigns community areas within the city. These trips are essentially unlocatable — 95% of them also lack coordinates entirely. Rather than dropping them (they can still be valid trips for non-spatial analyses), we keep every row and instead add two indicator columns, `pickup_flag` / `dropoff_flag`, marking whether a community area is present. This lets later spatial analyses filter on the flags without losing the trips for everything else.
+
+A second, subtler issue sits in the centroid coordinate columns: `pickup/dropoff_centroid_latitude/longitude` silently mix two resolutions — where a census tract exists, the coordinates are the tract centroid; where it doesn't, they fall back to the community area centroid. Comparing these coordinates directly across rows therefore mixes precision levels. We derive a clean mapping of each community area to its official centroid (using exactly the rows where the tract is absent, i.e. where the raw coordinate *is* the CA centroid) and join it back as `pickup/dropoff_ca_centroid_lat/lon`, giving a resolution-consistent coordinate to use for any area-level aggregation (e.g. heatmaps).
+
+**3. Remaining filters (brief).** Trips missing core trip values (`fare`, `trip_total`, `trip_seconds`, `trip_miles`) are dropped, as no meaningful analysis is possible without them. Negative `tips`/`tolls`/`extras` are removed (zero is legitimate — e.g. cash trips report no tip). Trips below Chicago's legal minimum fare (\$3.25 flag-drop) or shorter than 60 seconds are treated as test/error entries and removed; trips above the 99.9th percentile of distance or duration are capped as extreme outliers. `payment_type` and `company` are left untouched — missing values remain as `NA` and are handled per analysis.
+
+## Result
+
+| Step | Rows removed | Share |
+|---|---:|---:|
+| Duplicate `trip_id` | 305 | 0.0% |
+| Community area filter | 0 (flagged, not dropped) | 0.0% |
+| Missing core trip values | 12,502 | 0.2% |
+| Negative tips/tolls/extras | 0 | 0.0% |
+| Below minimum fare/duration | 598,226 | 8.8% |
+| Outliers above P99.9 | 11,709 | 0.2% |
+| **Total** | **622,742** | **9.1%** |
+
+The cleaned dataset has 6,203,096 trips and 27 columns.
+
+::: {.content-visible when-format="html"}
+*Draft note: once the notebook cells carry Quarto labels, the null-value overview and outlier plots from `00_data_loading.ipynb` can be embedded directly here instead of restating the numbers.*
+:::
