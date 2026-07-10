@@ -51,6 +51,8 @@ CLAUDE.md
 # Data - raw large files (too big for GitHub)
 # Rohdaten und bereinigte Parquet-Dateien werden lokal generiert (siehe notebooks/00_data_loading.ipynb)
 data/chicago_taxi_2025.csv
+data/chicago_taxi_2024.csv
+data/chicago_taxi_2026_h1.csv
 data/*.parquet
 
 # OS specific
