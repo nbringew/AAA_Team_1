@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Ivan Kamal Mehieddin">
+<meta name="author" content="Nils Bringewatt">
+<meta name="author" content="Maike Katterbach">
+<meta name="author" content="Vitus Grofl">
+<meta name="dcterms.date" content="2026-04-01">
+
+<title>Project Report Template</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="report_files/libs/clipboard/clipboard.min.js"></script>
+<script src="report_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="report_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="report_files/libs/quarto-html/popper.min.js"></script>
+<script src="report_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="report_files/libs/quarto-html/anchor.min.js"></script>
+<link href="report_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="report_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="report_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="report_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Project Report Template</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Authors</div>
+    <div class="quarto-title-meta-contents">
+             <p>Ivan Kamal Mehieddin </p>
+             <p>Nils Bringewatt </p>
+             <p>Maike Katterbach </p>
+             <p>Vitus Grofl </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 1, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- While you could use \clearpage or \newpage, this is the recommended way to insert a page break in Quarto as it translates to the native page break command for the output format you are using (e.g., \clearpage for PDF, <div style="page-break-after: always;"></div> for HTML). -->
+<div style="page-break-after: always;"></div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<section id="problem-description" class="level2">
+<h2 class="anchored" data-anchor-id="problem-description">Problem Description</h2>
+<p>Urban taxi demand is highly uneven across both space and time. In a city such as Chicago, trip volumes vary by neighborhood, hour of day, weekday, weather conditions, airport activity, commuting patterns, and local points of interest. For a fleet operator, this creates a practical planning problem: vehicles should be available where passengers are likely to request rides, while unnecessary idle time, empty repositioning, and inefficient charging should be reduced.</p>
+<p>This project uses Chicago taxi trips as a proxy for urban ride-hailing demand. The core problem is to understand and predict how many trips will start in different parts of the city during a given time window. In this report, demand is therefore defined as the number of taxi pickups per spatial unit and time interval.</p>
+</section>
+<section id="business-goal" class="level2">
+<h2 class="anchored" data-anchor-id="business-goal">Business Goal</h2>
+<p>The business goal is to support better operational decisions for a taxi or ride-hailing fleet operator. More accurate knowledge of where and when demand occurs can help operators position vehicles in high-demand areas, reduce passenger waiting times, avoid unnecessary idle time, and improve the utilization of available vehicles. For an electric fleet, this planning task is connected to charging decisions: vehicles need enough energy to serve expected demand, but charging should be scheduled in a cost-efficient way.</p>
+<p>From a managerial perspective, the project aims to turn historical trip data into practical recommendations for fleet positioning, demand planning, and charging strategy. The final value of the analysis is not only whether a model predicts demand accurately, but whether the results can inform decisions that improve service reliability and operational efficiency.</p>
+</section>
+<section id="data-mining-goal" class="level2">
+<h2 class="anchored" data-anchor-id="data-mining-goal">Data Mining Goal</h2>
+<p>The data mining goal is to build a spatio-temporal demand prediction task from raw taxi trip records and external contextual data. Individual trips are aggregated into panels by time window and spatial unit, and the target variable is the number of pickups in each panel cell. Calendar variables, weather data, and spatial identifiers are used as explanatory features.</p>
+<p>The project evaluates whether machine learning methods can predict aggregate taxi demand at useful resolutions. In particular, Support Vector Machine models are trained and compared against simple time-profile baselines. Model performance is assessed using appropriate error metrics and benchmarking, with attention to whether the models perform well not only overall but also in the high-demand areas that matter most for fleet operations.</p>
+</section>
+</section>
+<section id="data" class="level1">
+<h1>Data</h1>
+<p>We combine two data sources covering 2024-01-01 through 2026-05-31: Chicago Taxi Trips, the full set of reported trips pulled from the City of Chicago Data Portal (dataset <code>ajtu-isnz</code>), and hourly weather (temperature, precipitation, snowfall, wind, cloud cover) for Chicago from the Open-Meteo archive API. The taxi data cuts off at the end of May 2026 rather than the pull date because the portal has a reporting lag of several weeks — June 2026 held only 31 rows instead of the roughly 600,000 expected, which would otherwise look like a demand crash in the prediction models.</p>
+<p>The raw taxi export contains 16,086,180 rows across 21 columns. The cleaning pipeline concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the result out as a single Parquet file. In total, 10.1% of trips (1,620,530 rows) are removed:</p>
+<ol type="1">
+<li>Trips are deduplicated on <code>trip_id</code> before any other filtering (775 rows removed), keeping the first occurrence. Rows without a <code>trip_id</code> are set aside first and rejoined afterward, since <code>drop_duplicates</code> would otherwise treat several genuine but ID-less trips as duplicates of each other.</li>
+<li>Chicago reports location at two resolutions: <code>census_tract</code> (fine-grained) and <code>community_area</code> (77 coarse zones covering the whole city). Tracts are missing for over half of trips — not randomly, but because the city masks any tract with too few trips, for privacy. Community areas are far more complete (98.2% pickup, 91.6% dropoff), since they’re only missing when a trip starts or ends outside city limits. Rather than dropping those out-of-city trips, we keep every row and add <code>pickup_flag</code>/<code>dropoff_flag</code> columns marking whether an area is present, so later spatial analyses can filter on the flags without losing the trips for everything else.</li>
+<li>The centroid latitude/longitude columns silently mix resolutions: where a tract exists, they hold its centroid; where it doesn’t, they fall back to the community area’s centroid. We derive a clean area-to-centroid mapping (from exactly the rows where the raw coordinate already is the area centroid) and join it back as separate <code>*_ca_centroid_lat/lon</code> columns, giving a resolution-consistent coordinate for any area-level aggregation.</li>
+<li>Trips missing <code>fare</code>, <code>trip_total</code>, <code>trip_seconds</code>, or <code>trip_miles</code> are dropped (34,687 rows), since no meaningful analysis is possible without them.</li>
+<li>Negative <code>tips</code>/<code>tolls</code>/<code>extras</code> would be removed, though none occur in practice — zero is legitimate (e.g.&nbsp;cash trips report no tip). Trips below Chicago’s legal minimum fare ($3.25 flag-drop) or shorter than 60 seconds are treated as test or aborted entries and removed, together with trips above the 99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account for the bulk of all removed rows (1,585,068 of 1,620,530).</li>
+</ol>
+<p><code>payment_type</code> and <code>company</code> are left untouched throughout; their missing values remain as <code>NA</code> and are handled per analysis.</p>
+<p>The cleaned dataset has 14,465,650 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.</p>
+<p><em>Draft note: once the notebook cells carry Quarto labels, the null-value overview and outlier plots from <code>00_data_loading.ipynb</code> can be embedded directly here instead of restating the numbers.</em></p>
+</section>
+<section id="demand-prediction-support-vector-machines" class="level1">
+<h1>Demand Prediction — Support Vector Machines</h1>
+<section id="modeling-approach" class="level2">
+<h2 class="anchored" data-anchor-id="modeling-approach">Modeling Approach</h2>
+<p>We predict taxi pickup demand — the number of trips originating in a spatial unit within a fixed time window — using Support Vector Regression (SVM/SVR). Rather than fitting one model per spatial unit, we train a single <strong>pooled model per resolution</strong>: all units are trained together, with spatial identity encoded as fixed-effect dummy variables rather than as separate models. This design choice is motivated by scalability. Fitting hundreds of independent models — one per census tract, for instance — would multiply both training time and maintenance effort, whereas a pooled model reuses the same panel-construction and evaluation code across resolutions and requires only a single fit per experiment.</p>
+<p>The feature set consists of 17 exogenous time and weather variables, including two harmonics (sine/cosine pairs) each for hour-of-day and day-of-week, which allow the model to represent the bimodal morning and evening rush pattern that a single harmonic cannot capture. Community areas are represented through one-hot dummy variables. Per the constraints of this course, no lagged or autoregressive demand features are used; the model relies exclusively on exogenous inputs that would be known in advance of a prediction.</p>
+<p>Because raw demand counts are heavily right-skewed — median demand per area spans roughly three orders of magnitude, from single digits to several hundred trips per window — the regression target is <code>log1p(count)</code>, with predictions back-transformed via a clipped <code>expm1</code>. Without this transformation, squared-error loss would be dominated by a small number of high-demand windows, and the model would effectively ignore the majority of lower-demand areas.</p>
+</section>
+<section id="validation-strategy" class="level2">
+<h2 class="anchored" data-anchor-id="validation-strategy">Validation Strategy</h2>
+<p>Model evaluation follows a chronological holdout: the training window spans January 2024 through December 2025, and the test window spans January through May 2026. All rows are drawn from a complete, zero-filled grid of every spatial unit crossed with every time window, so that models are evaluated on genuine zero-demand periods rather than only on windows with observed trips. Hyperparameter search uses <code>TimeSeriesSplit</code> with three folds, preserving temporal order within the training data.</p>
+<p>Because absolute error metrics such as MAE or RMSE are not comparable across areas of very different demand magnitude, we introduce a <strong>profile baseline</strong> — the train-set mean demand per hour-of-day and weekday combination, computed separately for each spatial unit — as the reference model against which every SVM variant is judged. Performance is then reported as a <strong>skill score</strong>, defined as <span class="math inline">\(1 - \text{MAE}_{\text{model}} / \text{MAE}_{\text{baseline}}\)</span>, computed per unit. Because it is a ratio, each unit’s own demand scale cancels out, making the score comparable across units of very different volume. Skill scores are aggregated in two complementary ways: a demand-weighted mean, which serves as the headline metric because it matches a fleet-allocation use case where high-demand areas matter most, and an unweighted median, which serves as a guard rail against a model that only performs well on a handful of large units.</p>
+</section>
+<section id="results-community-area-4-hour-resolution" class="level2">
+<h2 class="anchored" data-anchor-id="results-community-area-4-hour-resolution">Results: Community Area, 4-Hour Resolution</h2>
+<p>The profile baseline achieves a pooled <span class="math inline">\(R^2\)</span> of 0.933 across all 77 community areas, but its per-area median <span class="math inline">\(R^2\)</span> is considerably lower, at 0.304, and 14 of the 77 areas have a negative per-area <span class="math inline">\(R^2\)</span>. These are predominantly low-demand areas, where near-zero trip counts leave little systematic variance for any model — baseline or otherwise — to explain.</p>
+<p>A pooled <code>LinearSVR</code> fit on the full 337,722-row training set achieves a pooled <span class="math inline">\(R^2\)</span> of 0.778, which appears competitive at first glance. However, its demand-weighted skill relative to the baseline is <strong>-0.75</strong>, meaning it systematically underperforms the baseline specifically in the highest-demand areas, even though it wins on a majority of individual areas by the unweighted median (skill of -0.03). This asymmetry arises because every area contributes an equal number of training rows regardless of its demand level, so the model’s shared coefficients are fit predominantly to the low-demand majority. We attempted to correct this by refitting with sample weights proportional to the square root of each area’s median demand, prioritizing high-demand areas during training the same way they are prioritized during evaluation. This improved the demand-weighted skill to -0.61, but at the cost of degrading the majority of areas — 67 of 77 areas now show negative skill, compared to 48 of 77 in the unweighted case — so weighting is better characterized as a trade-off than a resolution of the underlying issue.</p>
+<p>We also evaluated kernelized SVR (RBF, polynomial, and sigmoid kernels). Because exact kernel SVR scales quadratically to cubically with the number of training rows, kernel models were tuned on a random 10,000-row subsample of the training data and evaluated against the full test set. These results proved highly unstable: hyperparameters tuned via <code>GridSearchCV</code> achieved a cross-validated <span class="math inline">\(R^2\)</span> of only 0.088 for the polynomial kernel, yet the same configuration scored <span class="math inline">\(R^2 = -0.032\)</span> on the actual held-out test set — worse than the baseline for 62 of 77 areas — despite an untuned polynomial kernel appearing to perform excellently (<span class="math inline">\(R^2 = 0.875\)</span>) on a single earlier draw of the subsample. We conclude that tuning kernel SVR from a small subsample of a much larger dataset is too high-variance to be reliable at this resolution.</p>
+<p>As a further structural attempt to address the high-demand shortfall, we fit fully separate per-area models — no pooling and no shared coefficients — for the 20 areas with median demand of at least 10 trips per window. Even without any cross-area dilution, most configurations still lose to the profile baseline: default per-area <code>LinearSVR</code> and RBF models score -0.10 and -0.11 on demand-weighted skill, respectively, and per-area hyperparameter tuning only partially closes the gap. The sole configuration across the entire study that achieves a positive demand-weighted skill is a fully tuned per-area RBF SVR, at +0.023 — a small margin, and one under which 12 of the 20 areas are still individually negative.</p>
+<p>Taken together, these results point to a consistent pattern: across every variant we tried — pooled, demand-weighted, demand-tiered, and per-area — the profile baseline proves a surprisingly strong and difficult-to-beat reference specifically where demand is largest. We attribute this to the interaction between the <code>log1p</code> target transformation and its <code>expm1</code> back-transform, which amplifies error multiplicatively rather than additively: a small error in log-space becomes a large absolute error precisely for the highest-count predictions, a penalty the baseline, which predicts directly on the raw count scale, never incurs. Full methodological detail, diagnostic visualizations, and per-area breakdowns are available in <code>notebooks/03.05_prediction_svm_pooled copy.ipynb</code>.</p>
+</section>
+<section id="results-census-tract-resolution" class="level2">
+<h2 class="anchored" data-anchor-id="results-census-tract-resolution">Results: Census Tract Resolution</h2>
+<p><em>To be added.</em> Panel construction and model code for the census-tract resolution are already implemented in <code>notebooks/03.06_prediction_svm_tract.ipynb</code>, reusing the panel-building and evaluation logic developed for the community-area resolution above. Results are pending a completed model run and will be reported in this section.</p>
+</section>
+<section id="results-1-hour-resolution" class="level2">
+<h2 class="anchored" data-anchor-id="results-1-hour-resolution">Results: 1-Hour Resolution</h2>
+<p><em>To be added.</em></p>
+</section>
+</section>
+<section id="citations-and-references" class="level1">
+<h1>Citations and References</h1>
+<p>You can easily cite your sources using BibLaTeX. For example, you can cite the Quarto documentation <span class="citation" data-cites="quarto2024">(<a href="#ref-quarto2024" role="doc-biblioref">Team 2024</a>)</span> or a textbook like “R for Data Science” <span class="citation" data-cites="wickham2023">(<a href="#ref-wickham2023" role="doc-biblioref">Wickham et al. 2023</a>)</span>. The bibliography will be automatically generated at the end of the document.</p>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>The conclusion should summarize your findings and suggest future work.</p>
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-quarto2024" class="csl-entry" role="listitem">
+Team, Quarto. 2024. <span>“Quarto: An Open-Source Scientific and Technical Publishing System.”</span> <em>Journal of Modern Data Science</em>. <a href="https://quarto.org">https://quarto.org</a>.
+</div>
+<div id="ref-wickham2023" class="csl-entry" role="listitem">
+Wickham, Hadley, Mine Çetinkaya-Rundel, and Garrett Grolemund. 2023. <em>R for Data Science</em>. O’Reilly Media.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
