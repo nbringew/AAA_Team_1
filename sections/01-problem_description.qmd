@@ -1,2 +1,60 @@
 # Introduction
-tbd
+
+Urban taxi demand is highly uneven across both space and time. In a city such as Chicago,
+trip volumes vary by neighborhood, hour of day, weekday, weather conditions, airport
+activity, commuting patterns, and local points of interest. For fleet operators, these
+fluctuations create a planning problem: vehicles should be available where demand is likely
+to occur, but idle time, empty repositioning, and charging constraints make this difficult to
+manage efficiently.
+
+This project studies Chicago taxi trips as a proxy for urban ride-hailing demand. The goal is
+to combine large-scale trip records with external contextual data, describe the resulting
+spatio-temporal demand patterns, and evaluate whether machine learning methods can predict
+future demand at useful spatial and temporal resolutions. The analysis is complemented by a
+reinforcement learning charging scenario, which connects demand forecasting to operational
+decisions for an electric taxi fleet.
+
+## Problem Description
+
+The central problem is to support data-driven fleet planning under uncertain demand. A fleet
+operator needs to anticipate how many trips will start in each part of the city during a given
+time window, while also accounting for practical constraints such as vehicle availability,
+waiting time, and charging. In this report, demand is represented as the number of taxi
+pickups per spatial unit and time interval.
+
+The assignment therefore consists of five connected analytical tasks:
+
+1. Collect, clean, and integrate taxi trip data, weather data, and spatial reference data for
+   Chicago.
+2. Explore temporal and spatial demand patterns, including trip volumes, hot spots, and
+   variation across different spatial and temporal resolutions.
+3. Build demand prediction models using Support Vector Machines and compare their performance
+   against suitable baselines.
+4. Extend the prediction task with a neural network model and compare it to the SVM approach.
+5. Model an intelligent charging decision problem for an electric taxi using reinforcement
+   learning, and discuss operational implications for fleet management.
+
+## Scope and Research Questions
+
+The empirical part of the project focuses on trips reported through the Chicago Taxi Trips
+dataset and covers the period from January 2024 through May 2026. Because individual trip
+records are aggregated into spatial and temporal panels, the project does not attempt to
+predict individual passenger behavior. Instead, it asks whether aggregate demand can be
+anticipated well enough to support planning decisions.
+
+The report is guided by the following questions:
+
+- Where and when does taxi demand concentrate in Chicago?
+- How do demand patterns change when the spatial or temporal resolution is varied?
+- Which contextual features, such as weather and calendar variables, are useful for demand
+  prediction?
+- Can SVM-based models outperform simple time-profile baselines?
+- What operational insights follow for fleet positioning and electric vehicle charging?
+
+## Report Structure
+
+The remainder of the report first describes the data sources and cleaning pipeline. It then
+summarizes the construction of the analysis panels and presents the SVM demand prediction
+experiments. The final sections discuss model limitations, implications for fleet operations,
+and possible extensions such as additional external data sources or improved charging
+strategies.
