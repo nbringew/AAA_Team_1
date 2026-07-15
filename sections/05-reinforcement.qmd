@@ -1,0 +1,120 @@
+# Intelligent Charging with Reinforcement Learning
+
+## Problem Setup
+
+The final part of the project studies a smart-charging problem for an electric taxi. The taxi
+returns to its home charger at 14:00 and leaves again at 16:00, which creates a two-hour
+charging window. The agent makes one charging decision every 15 minutes, resulting in eight
+decisions per episode. At departure, the vehicle must have enough energy for the next shift.
+If the final state of charge is below the required energy demand, the episode receives a large
+shortage penalty.
+
+The task is relevant for an electric taxi fleet because charging decisions are not only a
+technical battery-management problem, but also an operational cost problem. Charging too
+slowly can leave the vehicle undercharged, while charging too aggressively can create
+unnecessary cost. A useful policy therefore needs to balance reliability and cost.
+
+## Markov Decision Process
+
+We formulate the charging task as a finite-horizon Markov Decision Process. Each episode
+represents one daily charging window from 14:00 to 16:00.
+
+The state includes the current state of charge, the current time step, the required departure
+energy, and the battery capacity. In the price-aware extension, the current electricity price
+and the mean remaining price are added to the state. The action space is discrete and consists
+of four charging levels: no charging, low charging, medium charging, and high charging. In the
+implemented notebook, these are represented as 0 kW, 5 kW, 11 kW, and 22 kW.
+
+The transition function updates the state of charge according to the selected charging power
+and the 15-minute interval length:
+
+$$
+SOC_{t+1} = \min(C, SOC_t + p_t \cdot 0.25)
+$$
+
+where $C$ is the battery capacity and $p_t$ is the selected charging power in kW. The reward is
+the negative charging cost in each step, plus a large terminal penalty if the final state of
+charge is below the sampled energy demand. This structure encourages the agent to charge
+enough to satisfy the departure requirement while avoiding unnecessary charging cost.
+
+## Simulation Environment
+
+The environment is implemented using `gymnasium`, which provides a standard interface for
+reinforcement learning. At the beginning of each episode, the battery capacity, initial state
+of charge, and required departure energy are sampled. The energy demand follows a normal
+distribution with mean 30 kWh and standard deviation 5 kWh, clipped to feasible values.
+
+Two versions of the environment are evaluated. The first version uses a simplified cost
+function and serves as a controlled baseline setting. The second version extends the problem
+with real electricity prices from EPEX day-ahead data. In this price-aware setting, charging
+costs depend on the actual amount of energy charged and the electricity price in the
+corresponding time step. This extension makes the task more realistic because it allows the
+agent to shift charging toward cheaper intervals when enough time remains.
+
+## Learning Algorithm and Baselines
+
+The agent is trained with a Deep Q-Network (DQN). DQN approximates the action-value function
+$Q(s,a)$ with a neural network and learns from repeated interaction with the simulated
+environment. The notebook trains the agent over 200,000 time steps and evaluates the learned
+policy on 1,000 paired test episodes.
+
+The main comparison baseline is a greedy charging heuristic. This heuristic ignores prices and
+computes how much energy is still missing relative to the departure requirement. It then
+selects the smallest charging power that can cover the remaining demand within the remaining
+time. This rule is simple, reliable, and operationally intuitive. For a final version of the
+analysis, this baseline should be complemented by a true flat-rate strategy, such as charging
+at a fixed power level until the target energy is reached.
+
+For a subset of episodes, a brute-force optimum is also computed. Since there are only four
+actions and eight time steps, all $4^8 = 65,536$ possible charging plans can be evaluated for a
+given episode. This provides a useful benchmark for judging whether the learned policy is
+close to the best possible charging plan.
+
+## Results
+
+In the simplified cost setting, the greedy heuristic performs very strongly. It reaches a 100%
+success rate and is equal to the brute-force optimum on the evaluated subset. The DQN reaches
+a lower success rate of 96% and a substantially worse mean reward. This indicates that, under
+the simplified cost structure, reinforcement learning does not add value over the simple
+rule-based policy. The problem is structurally easy: if prices are almost constant, the best
+strategy is simply to charge enough to meet the known energy requirement.
+
+In the price-aware setting, the DQN learns to react to electricity prices. Among episodes in
+which both DQN and greedy succeed, the DQN achieves lower average charging costs than the
+price-blind greedy heuristic. The notebook reports an average cost reduction of 0.0388 EUR per
+successful day, or approximately 4.7%. However, this cost saving comes with a lower success
+rate: the DQN succeeds in 95.7% of episodes, while the greedy heuristic succeeds in 100%.
+Because shortage is operationally costly, the lower reliability is an important limitation.
+When the terminal shortage penalty is included in the reward, the greedy heuristic remains the
+more robust policy.
+
+The policy visualizations suggest that the price-aware DQN tends to charge more aggressively
+when the current price is low or when the state of charge is below the required demand. When
+prices are high and sufficient time remains, the agent is more likely to wait. This behavior is
+consistent with the intended smart-charging logic, but the reliability gap shows that the
+learned policy still requires further tuning before it can be recommended for operational use.
+
+## Operational Implications
+
+The results suggest that reinforcement learning is most useful when the charging environment
+contains meaningful price variation. Under flat or nearly flat tariffs, a simple rule-based
+strategy is sufficient and easier to explain. Under dynamic tariffs, a price-aware policy can
+shift charging to cheaper periods and reduce energy cost, but only if it preserves a very high
+success rate.
+
+For a fleet operator, the key trade-off is therefore cost versus reliability. A policy that
+saves a few cents per day but occasionally leaves the taxi undercharged is not acceptable
+without additional safeguards. A practical implementation should either use a stronger
+shortage penalty, enforce a hard minimum state-of-charge constraint, or combine the learned
+policy with a rule-based safety layer.
+
+## Limitations and Next Steps
+
+The current notebook provides a solid proof of concept, but several improvements are needed
+for the final analysis. First, the cost function should be aligned with the assignment's
+quadratic charging-cost formulation, or the deviation should be clearly justified as an
+extension. Second, the evaluation should include a true flat-rate baseline in addition to the
+greedy heuristic. Third, the sensitivity analysis should explicitly vary the expected energy
+demand, for example by comparing scenarios with 25 kWh, 30 kWh, and 35 kWh mean demand.
+Finally, the price-aware environment should be made fully reproducible by loading stored price
+windows locally instead of relying on a live API request during execution.
