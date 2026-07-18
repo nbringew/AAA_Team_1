@@ -27,7 +27,7 @@ date: 2026-04-01 # Date of submission
 
 {{< include sections/02-data_description.qmd >}}
 
-{{< include sections/04-prediction_svm.qmd >}}
+{{< include sections/04-predictions.qmd >}}
 
 {{< include sections/05-reinforcement.qmd >}}
 
