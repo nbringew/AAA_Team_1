@@ -1,14 +1,85 @@
-# Appendix: Detailed Tables and Figures
+# Appendix: Detailed Tables and Figures {#sec-appendix}
 
-::: {.content-visible when-format="html"}
-*Placeholder: populate once notebooks are in their final run state.*
+Figures below are grouped by resolution, in the same order as the Results section. NN figures
+are not yet included, since the NN write-up in @sec-cross-cutting is still pending.
 
-- *Table: full model comparison (skill, weighted RMSE, pooled R²/MAE/RMSE) per model, per
-  resolution, both families.*
-- *Per-area skill maps (community area, 4h and 1h; census tract).*
-- *SVR feature-importance charts (coefficients, community area and tract).*
-- *NN permutation-importance charts (both time encodings).*
-- *Kernel-comparison and hyperparameter-tuning tables.*
-- *Tract-precision retention table and scope map (which community areas/tracts are in/out of
-  scope).*
-:::
+## Community Area, 4-Hour Resolution
+
+![Raw per-window demand is heavily right-skewed, which is why both SVR and NN regress on
+`log1p(count)` rather than raw counts.](assets/figures/prediction/ca4h_raw_demand.png){#fig-ca4h-raw-demand width="90%"}
+
+![Profile baseline test R² per community area. Pooled R² (0.933) is dominated by the
+highest-volume areas; the per-area distribution is much wider, with several areas
+negative.](assets/figures/prediction/ca4h_baseline_r2.png){#fig-ca4h-baseline-r2 width="90%"}
+
+![LinearSVR feature importance, community area. The primary daily-cycle harmonic (`hour_cos`)
+dominates by a wide margin; every weather variable sits at the bottom of the
+ranking.](assets/figures/prediction/ca4h_feature_importance.png){#fig-ca4h-feature-importance width="95%"}
+
+![Actual vs. predicted demand, test set, all five community-area models (baseline, pooled
+LinearSVR, demand-weighted LinearSVR, tuned RBF, tuned polynomial), log1p
+scale.](assets/figures/prediction/ca4h_actual_vs_predicted.png){#fig-ca4h-actual-vs-predicted width="95%"}
+
+![Per-area skill vs. median demand (log scale). Skill trends negative as demand increases: the
+model loses specifically in the areas that matter most for fleet
+allocation.](assets/figures/prediction/ca4h_skill_vs_demand.png){#fig-ca4h-skill-vs-demand width="95%"}
+
+![Per-area skill map, pooled LinearSVR, all 77 community
+areas.](assets/figures/prediction/ca4h_skill_map.png){#fig-ca4h-skill-map width="70%"}
+
+![Actual vs. all-models predictions for Community Area 8 (top-3 by demand), one evaluation
+week. Models track the daily cycle here, unlike the census-tract case
+below.](assets/figures/prediction/ca4h_top_area_all_models.png){#fig-ca4h-top-area width="90%"}
+
+![Median demand per area, with the low/medium/high tiers (9.1) and the 10 trips/window
+per-area threshold (9.2) used to select the 20 highest-demand
+areas.](assets/figures/prediction/ca4h_demand_tiers.png){#fig-ca4h-demand-tiers width="95%"}
+
+![Tuned per-area RBF SVR vs. its untuned default, skill vs. baseline. This is the only
+configuration in the study with positive demand-weighted skill, and only for the
+highest-demand areas among the
+20.](assets/figures/prediction/ca4h_per_area_rbf_tuning.png){#fig-ca4h-per-area-rbf width="80%"}
+
+## Census Tract Resolution
+
+![Scope map: the 179 of 878 census tracts with enough tract-precision data to support a
+tract-level model, across 11 community
+areas.](assets/figures/prediction/tract_scope_map.png){#fig-tract-scope-map width="70%"}
+
+![Profile baseline test R² per census tract. Wider spread than the community-area version
+(@fig-ca4h-baseline-r2), consistent with more units competing for the same total
+demand.](assets/figures/prediction/tract_baseline_r2.png){#fig-tract-baseline-r2 width="90%"}
+
+![LinearSVR feature-coefficient magnitudes, census tract. GMM hotspot-distance coefficients
+(red) dominate every other continuous
+feature.](assets/figures/prediction/tract_feature_importance_coefs.png){#fig-tract-feature-importance-coefs width="95%"}
+
+![Mean \|coefficient\| by feature group. Hotspot distance versus time/calendar and weather is
+the clearest single illustration of the pooling-collapses-to-a-per-unit-constant finding
+described in the Results
+section.](assets/figures/prediction/tract_feature_importance_groups.png){#fig-tract-feature-importance-groups width="75%"}
+
+![Actual vs. predicted demand, test set, baseline and pooled LinearSVR (log1p scale). LinearSVR
+predictions cluster into discrete horizontal bands rather than following the diagonal, a
+signature of a model outputting a level per tract rather than a
+prediction.](assets/figures/prediction/tract_actual_vs_predicted.png){#fig-tract-actual-vs-predicted width="90%"}
+
+![Per-tract skill vs. median demand (log scale).](assets/figures/prediction/tract_skill_vs_demand.png){#fig-tract-skill-vs-demand width="95%"}
+
+![Per-tract skill map, pooled LinearSVR, all 179 in-scope
+tracts.](assets/figures/prediction/tract_skill_map.png){#fig-tract-skill-map width="70%"}
+
+![Actual vs. all-models predictions for Census Tract 17031760900 (top-3 by demand), one
+evaluation week. Predicted demand from LinearSVR sits flat near zero across the entire week
+while actual and baseline demand both trace the expected daily
+cycle.](assets/figures/prediction/tract_top_tract_all_models.png){#fig-tract-top-tract width="90%"}
+
+## Pending
+
+- **NN permutation-importance charts** (both time encodings) and NN metric-comparison figures,
+  once the NN sections in Results and @sec-cross-cutting are written.
+- **Full model-comparison table**: skill, weighted RMSE, pooled R²/MAE/RMSE per model, per
+  resolution, both families (source data already available in
+  `results/model_results_summary.csv`).
+- **1-hour resolution figures**: the `03.02` notebook has not been run to completion, so no
+  saved plot output exists yet to extract from.

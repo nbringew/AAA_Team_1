@@ -1,6 +1,6 @@
-# Data Analytics
+# Demand Prediction
 
-## Demand Prediction
+## Problem Description
 
 We predict taxi pickup demand, defined as the number of trips originating in a spatial unit
 within a fixed time window. Two model families are used: Support Vector Regression (SVR) and
@@ -22,14 +22,14 @@ feedforward network can in principle learn non-linear interactions between spati
 time features that a linear model cannot without hand-built interaction terms, at the cost of a
 larger tuning surface and no direct coefficient interpretation.
 
-### Why Pooling Is Hard
-
 The central obstacle every model in this section has to overcome is that demand is not one
 distribution, it is dozens (or hundreds) of very different ones. Per-unit demand varies roughly
 three orders of magnitude across community areas, and the same imbalance only gets sharper at
 the finer-grained census-tract level, where far more units compete for the same total demand.
-Each unit also has its own daily and weekly rhythm, not just its own scale. A pooled model has
-to represent all of that with one set of parameters.
+Each unit also has its own daily and weekly rhythm, not just its own scale: an airport's demand
+follows flight schedules and runs around the clock, while a downtown office district peaks at
+commute hours and goes quiet overnight. A pooled model has to represent all of that with one set
+of parameters.
 
 This is a genuinely hard bind for SVR specifically. `LinearSVR` fits a single global coefficient
 vector, so it can only find one compromise direction that trades off across every spatial unit
@@ -38,14 +38,9 @@ rush-hour shape independent of a quiet residential area's. A kernel SVR (RBF, po
 sigmoid) could in principle represent that kind of heterogeneity through non-linear interactions
 between spatial identity and time features, but its training cost scales quadratically to
 cubically in the number of rows, which puts the full multi-hundred-thousand-row pooled training
-set out of reach. In practice this forces kernel variants onto a small subsample (10,000 rows),
-which is nowhere near enough to represent dozens of areas' worth of individual dynamics and,
-as the results below show, produces tuning that does not hold up on the real test set.
-
-The profile baseline sidesteps this problem entirely by construction: it is already a separate
-historical profile per spatial unit, so it never has to compromise across areas the way a pooled
-model does. That is the main reason it is such a persistently hard target to beat throughout this
-section, not any particular weakness of SVR or the NN as an algorithm.
+set out of reach. In practice this forces kernel variants onto a small subsample (10,000 rows), nowhere near
+enough to represent dozens of areas' worth of individual dynamics, and, as the results below
+show, does not solve the underlying problem even where the tuning itself is trustworthy.
 
 Both use the same exogenous feature set: weather (temperature, precipitation, snowfall, wind,
 cloud cover), cyclical time encodings (sine/cosine pairs for hour-of-day and day-of-week, two
@@ -53,8 +48,9 @@ harmonics each to capture the bimodal morning/evening rush), month, and weekend/
 indicators. Per the constraints of this course, no lagged or autoregressive demand features are
 used. Only inputs known in advance of a prediction are included. Both regress on `log1p(count)`,
 with predictions back-transformed via a clipped `expm1`, since raw demand is heavily
-right-skewed (median per-unit demand spans roughly three orders of magnitude); without this
-transform, squared-error loss would be dominated by a handful of high-demand windows.
+right-skewed (@fig-ca4h-raw-demand; median per-unit demand spans roughly three orders of
+magnitude); without this transform, squared-error loss would be dominated by a handful of
+high-demand windows.
 
 At census-tract resolution, one-hot spatial dummies for all 878 tracts would be impractical, so
 tract-level SVR instead reuses the 76 community-area dummies as a coarse spatial layer and adds
@@ -80,7 +76,11 @@ against, and shuffled folds give an even seasonal mix. The NN training procedure
 training period randomly 80/20 into a fit set and an early-stopping set for the same reason.
 
 A **profile baseline** serves as the reference every model is judged against: historical demand
-per (hour, weekday, month), computed separately per spatial unit.
+per (hour, weekday, month), computed separately per spatial unit. Because it is already computed
+separately per unit, it sidesteps the heterogeneity problem described in Modeling Approach
+entirely: it never has to compromise across areas the way a pooled model does, which is the main
+reason it turns out to be such a persistently hard target to beat throughout this section, not
+any particular weakness of SVR or the NN as an algorithm.
 
 ::: {.content-visible when-format="html"}
 *Second reconciliation note: the SVR baseline uses the train-set **mean**; the NN baseline uses
@@ -88,83 +88,107 @@ the train-set **median**. Different reference points mean "beats the baseline" i
 apples-to-apples claim across the two families.*
 :::
 
-Two metrics are reported. The **skill score**, $1 - \text{MAE}_{\text{model}} /
+Two metrics are reported, and they are not computed the same way, which matters for reading the
+numbers below correctly. The **skill score**, $1 - \text{MAE}_{\text{model}} /
 \text{MAE}_{\text{baseline}}$ per unit, is a ratio, so each unit's own demand scale cancels out,
-making it comparable across units *and* across resolutions. It is aggregated demand-weighted
-(headline, matching a fleet-allocation use case) and as an unweighted median (a guard rail
-against a model that only wins on a few large units). Skill score is currently computed for SVR
-only. The **weighted RMSE** is an absolute, trips-per-window number reported by both families:
-pooled RMSE with each row weighted by its unit's train-period mean demand. It is therefore the
-metric used for direct SVR-vs-NN comparison below. Plain, uniformly-weighted pooled R²/MAE/RMSE
-are reported only as a sanity check: demand varies roughly 1000-fold across units, so unweighted
-pooled numbers are dominated by the busiest few and hide poor performance elsewhere.
+making it comparable across units *and* across resolutions. It is aggregated two ways:
+**demand-weighted skill** (the headline number throughout Results) is the weighted average of
+every unit's own skill score, weighted by that unit's *median* demand, so the highest-volume
+units drive the number, matching a fleet-allocation use case where getting the busiest areas
+right matters most. The **unweighted median** (every unit counted equally) is a guard rail
+against a model that only wins on a few large units and loses everywhere else. Skill score is
+currently computed for SVR only. The **weighted RMSE** is a separate, absolute, trips-per-window
+number reported by both families: pooled RMSE with each row weighted by its unit's train-period
+*mean* demand, not the median used for demand-weighted skill above. It answers a different
+question, how large the errors are in absolute trips once high-volume rows are up-weighted,
+rather than skill's relative one, how much better than the baseline. It is therefore the metric
+used for direct SVR-vs-NN comparison below. Plain, uniformly-weighted pooled R²/MAE/RMSE, and
+the median per-unit R² that recurs throughout Results, are reported only as supporting context,
+not headline numbers: demand varies roughly 1000-fold across units, so unweighted pooled numbers
+are dominated by the busiest few, and per-unit R² is noisy for the many near-zero-demand units
+where there is little variance for any model to explain in the first place.
 
 ## Results
 
 ### Community Area, 4-Hour Resolution
 
-**SVR.** The profile baseline is a much harder reference per-area than pooled numbers suggest:
-pooled $R^2$ is 0.933, but median per-area $R^2$ is only 0.304, with 14 of 77 areas negative,
-mostly low-demand areas where near-zero counts leave little variance for any model to explain.
-This is the heterogeneity problem from above showing up directly in a single number: a pooled
-$R^2$ is dominated by the handful of highest-volume areas and says almost nothing about the
-typical area. This gap is exactly why skill score, not pooled $R^2$, drives the comparisons
-below. A pooled `LinearSVR`'s demand-weighted skill is **-0.75**: it systematically
-underperforms the baseline specifically in the highest-demand areas, despite winning on a
-majority of areas by unweighted median skill (-0.03). This is the linear model's single global
-coefficient vector paying for its lack of per-area flexibility exactly where it costs the most,
-since every area contributes an equal number of training rows regardless of demand, so the
-shared coefficients fit mostly to the low-demand majority. Refitting with sample weights
-proportional to $\sqrt{\text{median demand} + 1}$ raises demand-weighted skill to -0.61 but
-pushes 67 of 77 areas negative (up from 48): reweighting toward the areas the linear model
-handles worst comes directly at the expense of the areas it handled comparatively well, a
-trade-off, not a fix, because one global coefficient vector still cannot serve both regimes at
-once. Kernelized SVR (RBF, polynomial, sigmoid) is the other horn of the bind: it could in
-principle represent that per-area heterogeneity, but tuned only on a 10,000-row subsample since
-exact kernel methods scale quadratically-to-cubically in rows, and proved highly unstable under
-cross-validation as a result: a configuration scoring cross-validated $R^2 = 0.088$ reached only
-$R^2 = -0.032$ on the real test set. This is the one place $R^2$ is the right diagnostic here,
-since the instability is specifically about what `GridSearchCV` optimized. Fully separate
-per-area models (no pooling at all) for the 20 highest-demand areas still mostly lose to
-baseline; the single configuration across the entire study with positive demand-weighted skill
-is a tuned per-area RBF SVR, at **+0.023**, and it is no coincidence that the one configuration
-that wins is also the one that abandons pooling altogether; 12 of those 20 areas are still
-individually negative.
+**SVR.** The profile baseline is a much harder reference per-area than pooled numbers suggest
+(@fig-ca4h-baseline-r2): pooled $R^2$ is 0.933 (weighted RMSE 139.02), but median per-area $R^2$
+is only 0.208, with 21 of 77 areas negative, mostly low-demand areas where near-zero counts
+leave little variance for any model to explain. A pooled $R^2$ is dominated by the handful of
+highest-volume areas, the heterogeneity problem from Modeling Approach showing up directly in a
+single number, which is exactly why skill score, not pooled $R^2$, drives the comparisons below.
 
-**NN.** Restricted to areas with median demand $\geq 10$ trips/window, no network configuration
-beats the baseline, and more capacity makes results worse, not better. The baseline's weighted
-RMSE is 150.9 (plain RMSE 76.4); a shallow network (one hidden layer) reaches plain RMSE 77.1
-with cyclical time encoding and 79.9 with one-hot, both close to, but not beating, the baseline.
-A tuned deep network (two hidden layers, dropout, weight decay), selected from a
-one-factor-at-a-time search over regularization and width, performs *worse* still (RMSE 82.1):
-additional model capacity does not help. Permutation importance shows time-of-day features
-dominate for both encodings and weather contributes almost nothing. Demand here is driven by the
-clock, not exogenous conditions.
+A pooled `LinearSVR`'s demand-weighted skill is **-0.827** (weighted RMSE 254.94, nearly double
+the baseline's): it systematically underperforms the baseline specifically in the highest-demand
+areas, despite winning on a majority of areas by unweighted median skill (-0.017), since every
+area contributes an equal number of training rows regardless of demand, so the shared
+coefficients fit mostly to the low-demand majority (@fig-ca4h-skill-vs-demand). Refitting with
+sample weights proportional to $\sqrt{\text{median demand} + 1}$ raises demand-weighted skill to
+-0.675 (weighted RMSE 231.91) but pushes 53 of 77 areas negative (up from 40): reweighting
+toward the areas the linear model handles worst comes directly at the expense of the areas it
+handled comparatively well, a trade-off, not a fix, because one global coefficient vector still
+cannot serve both regimes at once.
 
-::: {.content-visible when-format="html"}
-*Per-variant weighted RMSE (shallow/deep NN) is not yet extracted from this notebook's output;
-only the baseline's is confirmed above.*
-:::
+Feature-coefficient analysis shows what the pooled model actually leans on (@fig-ca4h-feature-importance):
+the dominant coefficient by a wide margin is the primary daily-cycle harmonic (`hour_cos`),
+several times larger than any other feature, followed by its second harmonic and the weekend
+indicator. Every weather variable (temperature, wind speed, cloud cover, precipitation,
+snowfall) sits at the bottom of the ranking with a coefficient close to zero: the model has
+correctly identified that demand is driven by the clock, not the weather, even though it still
+loses to the baseline on the highest-demand areas (a contrast with the census-tract finding
+below, where a strong static predictor takes over instead and the time signal disappears).
 
-**Shared finding.** Neither family beats its baseline where demand is largest, and for the NN,
-added capacity makes results worse rather than better. A direct SVR-vs-NN weighted-RMSE
-comparison, and reconciliation of the scope/baseline differences noted in
-@sec-validation, is pending a fresh run of both notebooks against the reformatted metric.
+Kernel SVR (RBF, polynomial, sigmoid) was compared on the same 10,000-row subsample necessity
+established above. A first pass caught a methodological trap: scaling the community-area dummy
+columns flipped which kernel looked best, since RBF's distance-based kernel was dominated by the
+inflated dummy scale, so dummies were left unscaled from then on, as with `LinearSVR`. The
+subsample winner (polynomial, degree 2) and RBF were then tuned with `GridSearchCV` (`KFold`, 3,
+shuffled, per Validation Strategy) over a small grid (`C`/`degree` for polynomial, `C`/`gamma`
+for RBF). Tuning here is trustworthy, not unstable: cross-validated scores track the test set
+closely for both (polynomial: CV $R^2 = 0.865$, test $R^2 = 0.896$; RBF: CV $R^2 = 0.891$, test
+$R^2 = 0.892$). It still does not solve the underlying problem, though: per-area demand-weighted
+skill stays negative for both (polynomial -0.221, 49 of 77 areas negative; RBF -0.232, 46 of 77
+negative), the same pooled-$R^2$-looks-good, per-area-skill-does-not gap as plain `LinearSVR`
+above. Kernel tuning is therefore documentation only, not the SVM entry carried forward.
+
+Fully separate per-area models test whether pooling itself is the problem: one dedicated model
+per area, fit only on that area's own rows, with no coefficients shared across areas of
+different scale. This only makes sense above a demand threshold (median $\geq$ 10 trips/window,
+20 of 77 areas, @fig-ca4h-demand-tiers): below it, an area's target has too little variance for
+any regression model to meaningfully beat its own mean, so the 57 excluded areas keep using the
+pooled and baseline predictions computed elsewhere instead. This costs real computation:
+hyperparameters are tuned separately per area (`GridSearchCV`, `TimeSeriesSplit`, 3 folds), so
+tuning becomes 20 grid searches rather than one, roughly 20 to 45 minutes for the RBF grid
+alone. In exchange, exact kernel SVR, infeasible on the full 337,722-row pooled set, becomes
+entirely tractable per area, since each area's own history is only around 4,400 rows. The
+comparison to pooling is the point, and it is a clear, if narrow, win. Untuned per-area
+`LinearSVR` alone reaches demand-weighted skill -0.112, already well ahead of the pooled model's
+-0.827, before any tuning. Tuned per-area RBF SVR then becomes the single configuration in the
+entire study, pooled or per-area, with positive demand-weighted skill: **+0.012**
+(@fig-ca4h-per-area-rbf); it is no coincidence that the one configuration that wins also
+abandons pooling. The win is thin, though: median skill is -0.002 and 10 of the 20 areas remain
+individually negative, even with pooling removed.
+
+**NN.** *To be added.*
+
+**Shared finding.** *To be added once NN results are finalized.*
 
 ### Community Area, 1-Hour Resolution
 
 **SVR.** This resolution is a deliberate scaling stress test: same 77 areas, roughly 4x the
 rows, heavier zero-inflation, and a harder baseline too, since it now resolves 24 hourly buckets
 instead of 6 (baseline weighted RMSE 39.46). A pooled `LinearSVR`'s demand-weighted skill is
-**-1.016** (weighted RMSE 76.96), a worse deficit than the 4h resolution's -0.75 for the same
-model type. Finer time resolution does not ease the heterogeneity problem, it sharpens it: the
-same 77 areas now need to be told apart across four times as many hourly buckets, which only
-widens the gap a single global coefficient vector has to bridge. Kernel comparison and tuning on
-a 10,000-row subsample favor RBF: after tuning, RBF reaches demand-weighted skill -0.331
-(weighted RMSE 54.53), polynomial reaches skill -0.361 (weighted RMSE 56.14): the best 1h
-configurations, though both still negative. Demand-tiered and per-area models were attempted but
-dropped at this resolution: per-area `GridSearchCV`'s parallel fan-out, on top of the larger 1h
-panel, exceeded available memory.
+**-1.016** (weighted RMSE 76.96), a worse deficit than the 4h resolution's -0.827 for the same
+model type: finer time resolution sharpens the heterogeneity problem rather than easing it,
+since the same 77 areas must now be told apart across four times as many hourly buckets.
+
+Kernel comparison and tuning on a 10,000-row subsample favor RBF: after tuning, RBF reaches
+demand-weighted skill -0.331 (weighted RMSE 54.53), polynomial reaches skill -0.361 (weighted
+RMSE 56.14): the best 1h configurations, though both still negative.
+
+Demand-tiered and per-area models were attempted but dropped at this resolution: per-area
+`GridSearchCV`'s parallel fan-out, on top of the larger 1h panel, exceeded available memory.
 
 ::: {.content-visible when-format="html"}
 *NN results at this resolution are pending a completed run.*
@@ -177,7 +201,8 @@ area's centroid for privacy whenever a trip's originating tract had too few trip
 period. Masking is far from uniform: retention ranges from 0% to 70.9% by community area, with a
 clean gap in the distribution between roughly 5% and 7%. Areas below that gap have too little
 tract-precision data to support any tract-level model at all. This is not a modeling choice but
-a data-availability ceiling, leaving **179 of 878 tracts, across 11 community areas**, in scope;
+a data-availability ceiling, leaving **179 of 878 tracts, across 11 community areas**, in scope
+(@fig-tract-scope-map);
 the remaining areas fall back to the community-area-resolution model. Within scope, counts are
 built from tract-precision trips only (never the masked fallback points, which would otherwise
 spike demand artificially onto whichever tract contains a community area's centroid) and scaled
@@ -187,44 +212,54 @@ following the same compute-cost reasoning established at community-area resoluti
 even smaller per-unit scale. No NN model has been attempted at this resolution.
 
 **SVR.** The profile baseline is strong here too (pooled $R^2 = 0.860$), though the per-tract
-split is noisier than community-area's: median per-tract $R^2$ is only 0.170, with 38 of 179
-tracts negative, the same pooled-versus-per-unit gap seen at community-area resolution, now
-wider because there are more than twice as many units to average over. Pooled `LinearSVR` fares
-far worse than at coarser resolutions: unweighted median skill is **-0.259**, with 90 of 179
-tracts negative, pooled $R^2$ collapses to 0.026, and weighted RMSE more than doubles the
-baseline's (355 vs. 133). This is the clearest illustration in the whole study of what a single
-global coefficient vector does when it cannot represent per-unit heterogeneity: rather than fail
-gracefully, it gives up on time altogether and settles for representing which tract a row belongs
-to. Feature-coefficient analysis confirms this directly: GMM hotspot-distance features, which
-take one fixed value per tract, carry 99.6% of total \|coefficient\| mass despite being only 6 of
-the 25 continuous features, while time/calendar and weather coefficients are effectively zero.
-The model has learned each tract's average demand level from its distance to the nearest hot spot
-rather than any time-varying signal. Actual-vs-predicted plots for the top-3 tracts confirm this
-directly: predicted demand sits flat near zero across an entire evaluation week while actual and
-baseline demand both trace the expected daily cycle. With 179 pooled units instead of 77,
-between-unit demand variance dominates the loss even more than at community-area resolution, and
-the tract-level hotspot-distance covariates give the optimizer an easy per-unit shortcut, at the
-cost of the temporal signal the model exists to capture.
+split is noisier than community-area's (@fig-tract-baseline-r2): median per-tract $R^2$ is only
+0.170, with 38 of 179 tracts negative, the same pooled-versus-per-unit gap seen at
+community-area resolution, now wider because there are more than twice as many units to average
+over.
+
+Pooled `LinearSVR` fares far worse than at coarser resolutions. Demand-weighted skill, the
+headline metric everywhere else in this report, is not available here: the weighting
+computation returns `NaN` for this model, a data issue not yet root-caused (see Limitations),
+so unweighted median skill is reported in its place: **-0.259**, with 90 of 179 tracts negative.
+Weighted RMSE is 355.19, more than double the baseline's 133, and pooled $R^2$ collapses to
+0.026. This is the clearest illustration in the whole
+study of what a single global coefficient vector does when it cannot represent per-unit
+heterogeneity: rather than fail gracefully, it gives up on time altogether and settles for
+representing which tract a row belongs to.
+
+Feature-coefficient analysis confirms this directly (@fig-tract-feature-importance-coefs;
+@fig-tract-feature-importance-groups): GMM hotspot-distance features, which take one fixed value
+per tract, carry 99.6% of total \|coefficient\| mass despite being only 6 of the 25 continuous
+features, while time/calendar and weather coefficients are effectively zero. The model has
+learned each tract's average demand level from its distance to the nearest hot spot rather than
+any time-varying signal.
+
+Actual-vs-predicted plots for the top-3 tracts confirm this directly (@fig-tract-top-tract;
+@fig-tract-actual-vs-predicted): predicted demand sits flat near zero across an entire
+evaluation week while actual and baseline demand both trace the expected daily cycle, a sharp
+contrast with the community-area case, where the models at least track the shape of demand even
+while missing the peaks (@fig-ca4h-top-area). With 179 pooled units instead of 77, between-unit
+demand variance dominates
+the loss even more than at community-area resolution, and the tract-level hotspot-distance
+covariates give the optimizer an easy per-unit shortcut, at the cost of the temporal signal the
+model exists to capture.
 
 ## Cross-Cutting Discussion {#sec-cross-cutting}
 
 Across every SVR variant tried at community-area resolution (pooled, demand-weighted,
-demand-tiered, per-area) and across both NN architectures, the profile baseline is a
-surprisingly strong reference specifically where demand is largest. The common thread is the
-heterogeneity problem set out under Modeling Approach: demand differs by orders of magnitude and
-by shape across spatial units, and every pooled model here, linear or kernelized, either is not
-flexible enough to represent that difference or cannot be trained at full scale to learn it. For
-SVR, this is compounded by an interaction between the `log1p`/`expm1` transform and a
-squared-error-adjacent loss, which amplifies error multiplicatively: a small log-space miss
-becomes a large absolute error exactly for the highest counts, a penalty the baseline never
-incurs since it predicts directly on the raw scale. For the NN, added architectural capacity
-makes results worse, not better, and permutation importance shows weather contributes almost
-nothing, suggesting the exogenous feature set carries little signal beyond what the
-calendar-based baseline already captures.
+demand-tiered, per-area), the profile baseline is a surprisingly strong reference specifically
+where demand is largest (@fig-ca4h-skill-map; @fig-tract-skill-map), the same heterogeneity
+problem from Modeling Approach playing out consistently across every variant. It is compounded
+by an interaction between the `log1p`/`expm1` transform and a squared-error-adjacent loss, which
+amplifies error multiplicatively: a small log-space miss becomes a large absolute error exactly
+for the highest counts, a penalty the baseline never incurs since it predicts directly on the
+raw scale.
+
+**NN.** *To be added.*
 
 Comparing SVR across resolutions, demand-weighted skill for matching model types is worse at 1h
-than at 4h (-1.016 vs. -0.75 for pooled `LinearSVR`; -0.331 vs. an untested comparison point for
-tuned RBF), suggesting finer time resolution makes the high-demand gap harder to close, not
+than at 4h (-1.016 vs. -0.827 for pooled `LinearSVR`; -0.331 vs. an untested comparison point
+for tuned RBF), suggesting finer time resolution makes the high-demand gap harder to close, not
 easier. This is plausibly due to thinner per-window signal and heavier zero-inflation.
 
 ::: {.content-visible when-format="html"}
@@ -235,26 +270,20 @@ baseline fixes noted in @sec-validation). Revisit once all three land.*
 
 ### Practical Implications for Fleet Allocation
 
-The heterogeneity problem is not just a modeling inconvenience, it also points toward a more
-realistic deployment strategy than the one tested here. This study tried to solve the hard
-version of the problem: one model, fit once, that works for every spatial unit at once,
-including the many low-demand areas where near-zero counts leave little for any model to learn
-and contribute little to a fleet-allocation decision anyway. A business does not need that. It
-needs good predictions specifically where trip volume is high, since that is where allocation
-decisions have the most impact and where the demand curve already shown to vary roughly three
-orders of magnitude across units matters most.
+The heterogeneity problem also points toward a more realistic deployment strategy than the one
+tested here: a business does not need one model that works for every spatial unit, including
+the many low-demand areas that contribute little to a fleet-allocation decision anyway. It needs
+good predictions specifically where trip volume is high, since that is where allocation
+decisions have the most impact.
 
 The one result in this entire study with positive demand-weighted skill, the tuned per-area RBF
-SVR on the 20 highest-demand community areas (**+0.023**), is also the only one that abandons
-pooling in favor of a dedicated model per area. That is consistent with the framing above: once
-an area is modeled on its own, its training set no longer has to be shared with areas of a
-completely different scale and shape, the linear-versus-kernel-cost bind eases because each
-per-area training set is far smaller than the pooled one, and kernel methods become tractable
-without the subsampling that made the pooled kernel results unstable. The practical
-recommendation this suggests is to not chase one pooled model across all 77 (or 179, or 878)
-units, but to identify the small set of highest-demand areas that account for most of the
-fleet-allocation value, fit each one its own model, and leave the long tail of low-demand areas
-to the simple profile baseline, which already handles them about as well as anything tested here.
+SVR on the 20 highest-demand community areas (**+0.012**), is also the only one that abandons
+pooling in favor of a dedicated model per area, for exactly the reasons described above. The
+practical recommendation this suggests is to not chase one pooled model across all 77 (or 179,
+or 878) units, but to identify the small set of highest-demand areas that account for most of
+the fleet-allocation value, fit each one its own model, and leave the long tail of low-demand
+areas to the simple profile baseline, which already handles them about as well as anything
+tested here.
 
 ## Limitations & Outlook
 
@@ -263,9 +292,15 @@ to the simple profile baseline, which already handles them about as well as anyt
   exact, until reconciled.
 - **Skill score is SVR-only**; weighted RMSE is the only metric currently common to both
   families.
-- **Kernel-SVR tuning is unstable** under the subsample-then-tune approach required by its
-  quadratic-to-cubic training cost. This is a property of the tuning procedure, not of kernel
-  SVR itself.
+- **Kernel-SVR tuning at community-area resolution is trustworthy but still loses per area**:
+  `GridSearchCV` cross-validated scores track the test set closely (an earlier draft of this
+  section claimed the opposite, based on a since-corrected notebook run), but pooled $R^2$
+  looking strong (0.89-0.90) still does not translate into positive per-area demand-weighted
+  skill, the same gap seen throughout this section.
+- **Demand-weighted skill is unavailable (`NaN`) for the pooled census-tract `LinearSVR`**: the
+  weighting computation fails for this model specifically, not yet root-caused, so that
+  paragraph reports unweighted median skill instead, breaking the otherwise-consistent headline
+  metric used across every other model in this report.
 - **Pooled SVR at census-tract resolution underperforms its baseline** (median skill -0.259,
   pooled $R^2 = 0.026$ vs. baseline 0.860): GMM hotspot-distance features absorb 99.6% of
   coefficient mass, so the model effectively predicts a constant level per tract and ignores
@@ -273,3 +308,9 @@ to the simple profile baseline, which already handles them about as well as anyt
   a data-availability issue.
 - **No rolling-origin backtest** for either family: a single chronological holdout is used
   throughout.
+- **1-hour resolution numbers are unverified**: the `03.02` notebook has no saved execution
+  output and no corresponding row in `results/model_results_summary.csv`, so the figures cited
+  in that subsection could not be cross-checked against a live run the way every other number in
+  this section was.
+
+See @sec-appendix for detailed tables and figures.
