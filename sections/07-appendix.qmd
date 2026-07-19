@@ -1,0 +1,14 @@
+## Appendix: Detailed Tables and Figures
+
+::: {.content-visible when-format="html"}
+*Placeholder: populate once notebooks are in their final run state.*
+
+- *Table: full model comparison (skill, weighted RMSE, pooled R²/MAE/RMSE) per model, per
+  resolution, both families.*
+- *Per-area skill maps (community area, 4h and 1h; census tract).*
+- *SVR feature-importance charts (coefficients, community area and tract).*
+- *NN permutation-importance charts (both time encodings).*
+- *Kernel-comparison and hyperparameter-tuning tables.*
+- *Tract-precision retention table and scope map (which community areas/tracts are in/out of
+  scope).*
+:::
