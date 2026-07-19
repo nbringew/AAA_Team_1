@@ -1,6 +1,8 @@
-# Intelligent Charging with Reinforcement Learning
 
-## Problem Setup
+
+## Intelligent Charging with Reinforcement Learning
+
+### Problem Setup
 
 The final part of the project studies a smart-charging problem for an electric taxi. The taxi
 returns to its home charger at 14:00 and leaves again at 16:00, which creates a two-hour
@@ -14,7 +16,7 @@ technical battery-management problem, but also an operational cost problem. Char
 slowly can leave the vehicle undercharged, while charging too aggressively can create
 unnecessary cost. A useful policy therefore needs to balance reliability and cost.
 
-## Markov Decision Process
+### Markov Decision Process
 
 We formulate the charging task as a finite-horizon Markov Decision Process. Each episode
 represents one daily charging window from 14:00 to 16:00.
@@ -37,7 +39,7 @@ the negative charging cost in each step, plus a large terminal penalty if the fi
 charge is below the sampled energy demand. This structure encourages the agent to charge
 enough to satisfy the departure requirement while avoiding unnecessary charging cost.
 
-## Simulation Environment
+### Simulation Environment
 
 The environment is implemented using `gymnasium`, which provides a standard interface for
 reinforcement learning. At the beginning of each episode, the battery capacity, initial state
@@ -51,7 +53,7 @@ costs depend on the actual amount of energy charged and the electricity price in
 corresponding time step. This extension makes the task more realistic because it allows the
 agent to shift charging toward cheaper intervals when enough time remains.
 
-## Learning Algorithm and Baselines
+### Learning Algorithm and Baselines
 
 The agent is trained with a Deep Q-Network (DQN). DQN approximates the action-value function
 $Q(s,a)$ with a neural network and learns from repeated interaction with the simulated
@@ -70,7 +72,7 @@ actions and eight time steps, all $4^8 = 65,536$ possible charging plans can be 
 given episode. This provides a useful benchmark for judging whether the learned policy is
 close to the best possible charging plan.
 
-## Results
+### Results
 
 In the simplified cost setting, the greedy heuristic performs very strongly. It reaches a 100%
 success rate and is equal to the brute-force optimum on the evaluated subset. The DQN reaches
@@ -94,7 +96,7 @@ prices are high and sufficient time remains, the agent is more likely to wait. T
 consistent with the intended smart-charging logic, but the reliability gap shows that the
 learned policy still requires further tuning before it can be recommended for operational use.
 
-## Operational Implications
+### Operational Implications
 
 The results suggest that reinforcement learning is most useful when the charging environment
 contains meaningful price variation. Under flat or nearly flat tariffs, a simple rule-based
@@ -108,7 +110,7 @@ without additional safeguards. A practical implementation should either use a st
 shortage penalty, enforce a hard minimum state-of-charge constraint, or combine the learned
 policy with a rule-based safety layer.
 
-## Limitations and Next Steps
+### Limitations and Next Steps
 
 The current notebook provides a solid proof of concept, but several improvements are needed
 for the final analysis. First, the cost function should be aligned with the assignment's

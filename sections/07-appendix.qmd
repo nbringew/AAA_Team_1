@@ -1,4 +1,4 @@
-## Appendix: Detailed Tables and Figures
+# Appendix: Detailed Tables and Figures
 
 ::: {.content-visible when-format="html"}
 *Placeholder: populate once notebooks are in their final run state.*
