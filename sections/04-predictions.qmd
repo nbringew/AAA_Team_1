@@ -130,14 +130,23 @@ toward the areas the linear model handles worst comes directly at the expense of
 handled comparatively well, a trade-off, not a fix, because one global coefficient vector still
 cannot serve both regimes at once.
 
-Feature-coefficient analysis shows what the pooled model actually leans on (@fig-ca4h-feature-importance):
-the dominant coefficient by a wide margin is the primary daily-cycle harmonic (`hour_cos`),
-several times larger than any other feature, followed by its second harmonic and the weekend
-indicator. Every weather variable (temperature, wind speed, cloud cover, precipitation,
-snowfall) sits at the bottom of the ranking with a coefficient close to zero: the model has
-correctly identified that demand is driven by the clock, not the weather, even though it still
-loses to the baseline on the highest-demand areas (a contrast with the census-tract finding
-below, where a strong static predictor takes over instead and the time signal disappears).
+![Per-area skill vs. median demand (log scale). Skill trends negative as demand increases: the
+model loses specifically in the areas that matter most for fleet
+allocation.](assets/figures/prediction/ca4h_skill_vs_demand.png){#fig-ca4h-skill-vs-demand width="65%"}
+
+Feature-coefficient analysis shows what the pooled model actually leans on
+(@fig-ca4h-feature-importance): the dominant coefficient by a wide margin is the primary
+daily-cycle harmonic (`hour_cos`), several times larger than any other feature, followed by its
+second harmonic and the weekend indicator. Every weather variable (temperature, wind speed,
+cloud cover, precipitation, snowfall) sits at the bottom of the ranking with a coefficient close
+to zero: the model has correctly identified that demand is driven by the clock, not the weather,
+even though it still loses to the baseline on the highest-demand areas (a contrast with the
+census-tract finding below, where a strong static predictor takes over instead and the time
+signal disappears).
+
+![LinearSVR feature importance, community area. The primary daily-cycle harmonic (`hour_cos`)
+dominates by a wide margin; every weather variable sits at the bottom of the
+ranking.](assets/figures/prediction/ca4h_feature_importance.png){#fig-ca4h-feature-importance width="75%"}
 
 Kernel SVR (RBF, polynomial, sigmoid) was compared on the same 10,000-row subsample necessity
 established above. A first pass caught a methodological trap: scaling the community-area dummy
@@ -169,6 +178,27 @@ entire study, pooled or per-area, with positive demand-weighted skill: **+0.012*
 (@fig-ca4h-per-area-rbf); it is no coincidence that the one configuration that wins also
 abandons pooling. The win is thin, though: median skill is -0.002 and 10 of the 20 areas remain
 individually negative, even with pooling removed.
+
+@tbl-ca4h-comparison collects all ten SVR configurations tried at this resolution side by side.
+The pattern is consistent across every row but one: pooled or per-area, tuned or not, almost
+everything loses to the baseline on demand-weighted skill, and the single exception wins by a
+thin margin.
+
+| Model | Units | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|---:|---:|
+| Profile baseline | 77 | 0.000 | 0.000 | 139.02 | 0.933 |
+| LinearSVR, pooled | 77 | -0.827 | -0.017 | 254.94 | 0.778 |
+| LinearSVR, weighted | 77 | -0.675 | -0.052 | 231.91 | 0.814 |
+| LinearSVR, tiered | 77 | -0.732 | 0.000 | 243.60 | 0.800 |
+| RBF, tuned | 77 | -0.232 | -0.027 | 176.93 | 0.892 |
+| Polynomial, tuned | 77 | -0.221 | -0.049 | 171.71 | 0.896 |
+| LinearSVR, per-area | 20 | -0.112 | -0.091 | 156.93 | 0.905 |
+| LinearSVR, per-area, tuned | 20 | -0.125 | -0.116 | 161.10 | 0.901 |
+| RBF, per-area | 20 | -0.135 | -0.105 | 163.37 | 0.897 |
+| **RBF, per-area, tuned** | 20 | **+0.012** | -0.002 | 143.80 | 0.921 |
+
+: Full model comparison, community area, 4-hour resolution. Per-area models cover only the 20
+areas above the demand threshold, not all 77. {#tbl-ca4h-comparison tbl-colwidths="[32,8,17,14,15,14]"}
 
 **NN.** *To be added.*
 
@@ -231,15 +261,20 @@ study of what a single global coefficient vector does when it cannot represent p
 heterogeneity: rather than fail gracefully, it gives up on time altogether and settles for
 representing which tract a row belongs to.
 
-Feature-coefficient analysis confirms this directly (@fig-tract-feature-importance-coefs;
-@fig-tract-feature-importance-groups): GMM hotspot-distance features, which take one fixed value
+Feature-coefficient analysis confirms this directly (@fig-tract-feature-importance-groups;
+@fig-tract-feature-importance-coefs): GMM hotspot-distance features, which take one fixed value
 per tract, carry 99.6% of total \|coefficient\| mass despite being only 6 of the 25 continuous
 features, while time/calendar and weather coefficients are effectively zero. The model has
 learned each tract's average demand level from its distance to the nearest hot spot rather than
 any time-varying signal.
 
-Actual-vs-predicted plots for the top-3 tracts confirm this directly (@fig-tract-top-tract;
-@fig-tract-actual-vs-predicted): predicted demand sits flat near zero across an entire
+![Mean \|coefficient\| by feature group. Hotspot distance versus time/calendar and weather is
+the clearest single illustration of the pooling-collapses-to-a-per-unit-constant finding
+described above.](assets/figures/prediction/tract_feature_importance_groups.png){#fig-tract-feature-importance-groups width="75%"}
+
+Actual-vs-predicted plots for the top-3 tracts confirm this directly
+(@fig-tract-actual-vs-predicted; @fig-tract-top-tract): predicted demand sits flat near zero
+across an entire
 evaluation week while actual and baseline demand both trace the expected daily cycle, a sharp
 contrast with the community-area case, where the models at least track the shape of demand even
 while missing the peaks (@fig-ca4h-top-area). With 179 pooled units instead of 77, between-unit
@@ -247,6 +282,16 @@ demand variance dominates
 the loss even more than at community-area resolution, and the tract-level hotspot-distance
 covariates give the optimizer an easy per-unit shortcut, at the cost of the temporal signal the
 model exists to capture.
+
+![Actual vs. predicted demand, test set, baseline and pooled LinearSVR (log1p scale). LinearSVR
+predictions cluster into discrete horizontal bands rather than following the diagonal, a
+signature of a model outputting a level per tract rather than a
+prediction.](assets/figures/prediction/tract_actual_vs_predicted.png){#fig-tract-actual-vs-predicted width="90%"}
+
+![Actual vs. all-models predictions for Census Tract 17031760900 (top-3 by demand), one
+evaluation week. Predicted demand from LinearSVR sits flat near zero across the entire week
+while actual and baseline demand both trace the expected daily
+cycle.](assets/figures/prediction/tract_top_tract_all_models.png){#fig-tract-top-tract width="90%"}
 
 ## Cross-Cutting Discussion {#sec-cross-cutting}
 
