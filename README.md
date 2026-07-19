@@ -43,7 +43,7 @@ The rendered PDF is written to:
 docs/report.pdf
 ```
 
-## Recommended Execution Order
+## Execution Order
 
 The notebooks are named in the intended analytical order. The report itself does not require
 rerunning every notebook during rendering, but the following order reproduces the main analysis
