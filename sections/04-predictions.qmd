@@ -209,7 +209,11 @@ spike demand artificially onto whichever tract contains a community area's centr
 by each area's inverse retention rate to estimate total demand. Given the smaller per-unit
 training data at this resolution, only a pooled `LinearSVR` is fit; kernel SVR is not attempted,
 following the same compute-cost reasoning established at community-area resolution, now at an
-even smaller per-unit scale. No NN model has been attempted at this resolution.
+even smaller per-unit scale. No NN model has been attempted at this resolution. A census-tract,
+1-hour combination was deliberately not attempted either: it would stack both axes that make
+pooling hard at once, 179 units instead of 77 and the four-fold finer time buckets that already
+sharpened the problem at community-area resolution (@sec-cross-cutting), on top of tract-level
+data that is already thinner per unit than the community-area panel.
 
 **SVR.** The profile baseline is strong here too (pooled $R^2 = 0.860$), though the per-tract
 split is noisier than community-area's (@fig-tract-baseline-r2): median per-tract $R^2$ is only
