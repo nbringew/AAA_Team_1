@@ -1,40 +1,49 @@
-# Data Analysis Workflow
-In this section, we demonstrate how to include analysis results in your report. You can either write code directly in this `.qmd` file or reference results from a separate prototyping notebook.
+# Brief data preparation details
 
-## Prototyping in Notebooks
-You can work on your analysis in the `notebooks/prototyping.ipynb` file. When you are ready to include a result, you can use Quarto's `embed` shortcode. This is a powerful feature that allows you to maintain a clean report while keeping your extensive prototyping code in separate notebooks.
+The raw taxi export contains 16,086,180 rows across 21 columns. The cleaning pipeline
+concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the
+result out as a single Parquet file. In total, 10.1% of trips (1,620,530 rows) are removed:
 
-To do this, you must label the specific cell in your notebook using `#| label: fig-some-name` (and optional `#| fig-cap: ...`). Then, you can embed it here like this:
+1. **Duplicate removal.** Trips are deduplicated on `trip_id` before any other filtering
+   (775 rows removed), keeping the first occurrence. Rows without a `trip_id` are set aside
+   first and rejoined afterward, since `drop_duplicates` would otherwise treat several genuine
+   but ID-less trips as duplicates of each other.
 
-{{< embed notebooks/prototyping.ipynb#fig-prototype-plot >}}
+2. **Handling missing spatial identifiers.** Chicago reports location at two resolutions:
+   `census_tract` (fine-grained) and `community_area` (77 coarse zones covering the whole
+   city). Tracts are missing for over half of trips — not randomly, but because the city masks
+   any tract with too few trips, for privacy. Community areas are far more complete
+   (98.2% pickup, 91.6% dropoff), since they're only missing when a trip starts or ends outside
+   city limits. Rather than dropping those out-of-city trips, we keep every row and add
+   `pickup_flag`/`dropoff_flag` columns marking whether an area is present, so later spatial
+   analyses can filter on the flags without losing the trips for everything else.
 
-Note that this requires your `.ipynb` notebooks to follow Quarto's cell-metadata syntax.
+3. **Resolution-consistent centroids.** The centroid latitude/longitude columns silently mix
+   resolutions: where a tract exists, they hold its centroid; where it doesn't, they fall back
+   to the community area's centroid. We derive a clean area-to-centroid mapping from exactly
+   the rows where the raw coordinate already is the area centroid and join it back as separate
+   `*_ca_centroid_lat/lon` columns, giving a resolution-consistent coordinate for any
+   area-level aggregation.
 
-```{python}
-#| label: fig-sample-plot
-#| fig-cap: "A sample plot generated directly in the report."
-import matplotlib.pyplot as plt
-import numpy as np
+4. **Removal of incomplete trip records.** Trips missing `fare`, `trip_total`, `trip_seconds`,
+   or `trip_miles` are dropped (34,687 rows), since no meaningful analysis is possible without
+   them.
 
-x = np.linspace(0, 10, 100)
-y = np.sin(x)
+5. **Outlier and plausibility filtering.** Negative `tips`/`tolls`/`extras` would be removed,
+   though none occur in practice — zero is legitimate, for example for cash trips that report
+   no tip. Trips below Chicago's legal minimum fare (\$3.25 flag-drop) or shorter than
+   60 seconds are treated as test or aborted entries and removed, together with trips above the
+   99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account
+   for the bulk of all removed rows (1,585,068 of 1,620,530).
 
-plt.plot(x, y)
-plt.show()
-```
+\noindent `payment_type` and `company` are left untouched throughout; their missing values remain as `NA`
+and are handled per analysis.
 
-In the PDF version, the code above is hidden by default to keep the report concise and focused on the results. In the HTML version, the code can be expanded using the "Code" button.
+\noindent The cleaned dataset has 14,465,650 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.
 
+
+<!--
 ::: {.content-visible when-format="html"}
-## Margin Content (HTML only)
-In the interactive HTML version of this report, you can use the margin to show secondary content without breaking the flow of the main text.
-
-```{python}
-#| label: fig-margin-plot
-#| fig-cap: "A small plot in the margin."
-#| column: margin
-
-plt.plot([1, 23, 2, 4])
-plt.show()
-```
+*Draft note: once the notebook cells carry Quarto labels, the null-value overview and outlier plots from `00_data_loading.ipynb` can be embedded directly here instead of restating the numbers.*
 :::
+-->

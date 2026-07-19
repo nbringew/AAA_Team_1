@@ -10,7 +10,7 @@ are organized by resolution so the two model families can be compared directly w
 available; a synthesis of findings across resolutions and models follows in
 @sec-cross-cutting.
 
-### Modeling Approach
+## Modeling Approach
 
 Both model families share the same task framing: a single **pooled model per experiment**,
 trained across all spatial units at once, with spatial identity encoded as one-hot fixed-effect
@@ -22,7 +22,7 @@ feedforward network can in principle learn non-linear interactions between spati
 time features that a linear model cannot without hand-built interaction terms, at the cost of a
 larger tuning surface and no direct coefficient interpretation.
 
-#### Why Pooling Is Hard
+### Why Pooling Is Hard
 
 The central obstacle every model in this section has to overcome is that demand is not one
 distribution, it is dozens (or hundreds) of very different ones. Per-unit demand varies roughly
@@ -69,7 +69,7 @@ demand at or above a fixed threshold. The two families' pooled results are there
 directly comparable at face value until this is addressed or explicitly corrected for.*
 :::
 
-### Validation Strategy {#sec-validation}
+## Validation Strategy {#sec-validation}
 
 Both families use a chronological holdout, training on 2024-01-01 through 2025-12-31 and
 testing on 2026-01-01 through 2026-05-31, over a complete, zero-filled grid of every spatial
@@ -99,9 +99,9 @@ metric used for direct SVR-vs-NN comparison below. Plain, uniformly-weighted poo
 are reported only as a sanity check: demand varies roughly 1000-fold across units, so unweighted
 pooled numbers are dominated by the busiest few and hide poor performance elsewhere.
 
-### Results
+## Results
 
-#### Community Area, 4-Hour Resolution
+### Community Area, 4-Hour Resolution
 
 **SVR.** The profile baseline is a much harder reference per-area than pooled numbers suggest:
 pooled $R^2$ is 0.933, but median per-area $R^2$ is only 0.304, with 14 of 77 areas negative,
@@ -151,7 +151,7 @@ added capacity makes results worse rather than better. A direct SVR-vs-NN weight
 comparison, and reconciliation of the scope/baseline differences noted in
 @sec-validation, is pending a fresh run of both notebooks against the reformatted metric.
 
-#### Community Area, 1-Hour Resolution
+### Community Area, 1-Hour Resolution
 
 **SVR.** This resolution is a deliberate scaling stress test: same 77 areas, roughly 4x the
 rows, heavier zero-inflation, and a harder baseline too, since it now resolves 24 hourly buckets
@@ -170,7 +170,7 @@ panel, exceeded available memory.
 *NN results at this resolution are pending a completed run.*
 :::
 
-#### Census Tract Resolution
+### Census Tract Resolution
 
 Only 44.6% of trips carry a true tract-level location; the rest are masked to their community
 area's centroid for privacy whenever a trip's originating tract had too few trips in that
@@ -206,7 +206,7 @@ between-unit demand variance dominates the loss even more than at community-area
 the tract-level hotspot-distance covariates give the optimizer an easy per-unit shortcut, at the
 cost of the temporal signal the model exists to capture.
 
-### Cross-Cutting Discussion {#sec-cross-cutting}
+## Cross-Cutting Discussion {#sec-cross-cutting}
 
 Across every SVR variant tried at community-area resolution (pooled, demand-weighted,
 demand-tiered, per-area) and across both NN architectures, the profile baseline is a
@@ -256,7 +256,7 @@ units, but to identify the small set of highest-demand areas that account for mo
 fleet-allocation value, fit each one its own model, and leave the long tail of low-demand areas
 to the simple profile baseline, which already handles them about as well as anything tested here.
 
-### Limitations & Outlook
+## Limitations & Outlook
 
 - **SVR and NN are not yet evaluated on matched scope**: differing demand thresholds and
   baseline definitions (mean vs. median) mean cross-family numbers above are directional, not
@@ -273,4 +273,3 @@ to the simple profile baseline, which already handles them about as well as anyt
   a data-availability issue.
 - **No rolling-origin backtest** for either family: a single chronological holdout is used
   throughout.
-

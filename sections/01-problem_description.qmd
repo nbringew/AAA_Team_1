@@ -35,8 +35,10 @@ records and external contextual data. Individual trips are aggregated into panel
 window and spatial unit, and the target variable is the number of pickups in each panel cell.
 Calendar variables, weather data, and spatial identifiers are used as explanatory features.
 
-The project evaluates whether machine learning methods can predict aggregate taxi demand at
-useful resolutions. In particular, Support Vector Machine models are trained and compared
-against simple time-profile baselines. Model performance is assessed using appropriate error
-metrics and benchmarking, with attention to whether the models perform well not only overall
-but also in the high-demand areas that matter most for fleet operations.
+The project evaluates whether machine learning models can predict aggregate taxi demand at
+useful resolutions. In particular, Support Vector Machine models and neural networks are
+trained and compared against simple time-profile baselines. Model performance is assessed using
+appropriate error metrics and benchmarking, with attention to whether the models perform well
+not only overall but also in the high-demand areas that matter most for fleet operations. In a
+second analytical task, a reinforcement learning approach is used to study how charging
+decisions for an electric taxi can be optimized under operational constraints.

@@ -14,7 +14,7 @@ shortage penalty.
 The task is relevant for an electric taxi fleet because charging decisions are not only a
 technical battery-management problem, but also an operational cost problem. Charging too
 slowly can leave the vehicle undercharged, while charging too aggressively can create
-unnecessary cost. A useful policy therefore needs to balance reliability and cost.
+necessary cost. A useful policy therefore needs to balance reliability and cost.
 
 ### Markov Decision Process
 

@@ -1,19 +1,66 @@
-# Data
+# Data Description
 
-We combine two data sources covering 2024-01-01 through 2026-05-31: Chicago Taxi Trips, the full set of reported trips pulled from the City of Chicago Data Portal (dataset `ajtu-isnz`), and hourly weather (temperature, precipitation, snowfall, wind, cloud cover) for Chicago from the Open-Meteo archive API. The taxi data cuts off at the end of May 2026 rather than the pull date because the portal has a reporting lag of several weeks — June 2026 held only 31 rows instead of the roughly 600,000 expected, which would otherwise look like a demand crash in the prediction models.
+The analysis combines taxi trip records, hourly weather data, and spatial reference data for
+Chicago. The taxi and weather data cover 2024-01-01 through 2026-05-31. The taxi data cuts off
+at the end of May 2026 rather than the pull date because the portal has a reporting lag of
+several weeks — June 2026 held only 31 rows instead of the roughly 600,000 expected, which
+would otherwise look like a demand crash in the prediction models.
 
-The raw taxi export contains 16,086,180 rows across 21 columns. The cleaning pipeline concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the result out as a single Parquet file. In total, 10.1% of trips (1,620,530 rows) are removed:
+## Taxi Trip Data
 
-1. Trips are deduplicated on `trip_id` before any other filtering (775 rows removed), keeping the first occurrence. Rows without a `trip_id` are set aside first and rejoined afterward, since `drop_duplicates` would otherwise treat several genuine but ID-less trips as duplicates of each other.
-2. Chicago reports location at two resolutions: `census_tract` (fine-grained) and `community_area` (77 coarse zones covering the whole city). Tracts are missing for over half of trips — not randomly, but because the city masks any tract with too few trips, for privacy. Community areas are far more complete (98.2% pickup, 91.6% dropoff), since they're only missing when a trip starts or ends outside city limits. Rather than dropping those out-of-city trips, we keep every row and add `pickup_flag`/`dropoff_flag` columns marking whether an area is present, so later spatial analyses can filter on the flags without losing the trips for everything else.
-3. The centroid latitude/longitude columns silently mix resolutions: where a tract exists, they hold its centroid; where it doesn't, they fall back to the community area's centroid. We derive a clean area-to-centroid mapping (from exactly the rows where the raw coordinate already is the area centroid) and join it back as separate `*_ca_centroid_lat/lon` columns, giving a resolution-consistent coordinate for any area-level aggregation.
-4. Trips missing `fare`, `trip_total`, `trip_seconds`, or `trip_miles` are dropped (34,687 rows), since no meaningful analysis is possible without them.
-5. Negative `tips`/`tolls`/`extras` would be removed, though none occur in practice — zero is legitimate (e.g. cash trips report no tip). Trips below Chicago's legal minimum fare (\$3.25 flag-drop) or shorter than 60 seconds are treated as test or aborted entries and removed, together with trips above the 99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account for the bulk of all removed rows (1,585,068 of 1,620,530).
+The main data source is the Chicago Taxi Trips dataset from the City of Chicago Data Portal
+(dataset `ajtu-isnz`). Each row represents one reported taxi trip by a licensed Chicago taxi.
+The raw export contains 16,086,180 rows and 21 columns before cleaning.
 
-`payment_type` and `company` are left untouched throughout; their missing values remain as `NA` and are handled per analysis.
+The dataset contains temporal variables (`trip_start_timestamp`, `trip_end_timestamp`), trip
+characteristics (`trip_seconds`, `trip_miles`), price components (`fare`, `tips`, `tolls`,
+`extras`, `trip_total`), categorical fields (`payment_type`, `company`), and anonymized
+identifiers (`trip_id`, `taxi_id`). Pickup and dropoff locations are reported through census
+tracts, community areas, and centroid coordinates.
 
-The cleaned dataset has 14,465,650 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.
+Chicago reports locations at two spatial resolutions. Community areas are coarse city zones;
+there are 77 official community areas covering Chicago. Census tracts are more fine-grained,
+but they are frequently missing because the city masks low-volume tracts for privacy. The
+centroid latitude and longitude columns therefore mix resolutions: where a census tract is
+available, the centroid belongs to the tract; otherwise, the coordinates fall back to the
+community-area centroid. This limitation is important for all spatial analyses and is handled
+explicitly during data preparation.
 
-::: {.content-visible when-format="html"}
-*Draft note: once the notebook cells carry Quarto labels, the null-value overview and outlier plots from `00_data_loading.ipynb` can be embedded directly here instead of restating the numbers.*
-:::
+## Weather Data
+
+Hourly weather data for Chicago are obtained from the Open-Meteo archive API and stored in
+`data/chicago_weather_2024_2026_hourly.csv`. The file contains 21,168 hourly observations and
+9 variables, covering the same period as the taxi data. The variables include temperature,
+apparent temperature, precipitation, snowfall, wind speed, cloud cover, WMO weather code, and
+a human-readable weather description.
+
+Weather is included because it is an external factor that may influence travel behavior. It is
+also suitable for demand prediction because weather variables are exogenous and can be known
+before the prediction period. In later modeling steps, weather observations are joined to taxi
+trips and demand panels through their timestamps.
+
+## Spatial Reference Data
+
+Several spatial datasets are used to interpret and aggregate the taxi locations. The official
+Chicago community-area boundaries contain 77 polygons and are used for maps, spatial joins, and
+community-area-level demand aggregation. Census-tract boundaries contain 878 polygons and
+provide a more detailed spatial layer where tract-level taxi information is available. The city
+boundary is used as the geographic frame for maps and spatial filtering.
+
+The project also uses point-of-interest data from OpenStreetMap, collected through Overpass
+Turbo and stored as `data/poi_chicago.geojson`. These data contain locations such as transport
+facilities, amenities, tourism-related places, and other urban activity points. They are used
+as contextual spatial information and can help explain why some areas generate more taxi
+demand than others.
+
+## Granularity and Limitations
+
+The raw taxi data are trip-level observations. For prediction, they are aggregated into
+spatio-temporal panels where the target variable is the number of taxi pickups per spatial unit
+and time window. The analysis uses different spatial resolutions, especially community areas
+and census tracts, and different temporal resolutions such as hourly and four-hour windows.
+
+The final cleaned taxi dataset described in the preparation section contains 14,465,650 rows
+and 27 columns. The most important limitations are the privacy masking of census tracts, the
+reporting lag at the end of the portal data, and the fact that taxi trips are used as a proxy
+for broader ride-hailing demand rather than observing ride-hailing platforms directly.

@@ -1,5 +1,5 @@
 ---
-title: "Project Report Template" # Give your report a title
+title: "Predicting Urban Taxi Demand and Smart Charging Strategies for Electric Fleets" # Give your report a title
 course: "Advanced Analytics and Applications" # Specify the course name
 team: "1" # Specify your team number
 author:
@@ -9,7 +9,7 @@ author:
     student-id: 7443820
   - name: Maike Katterbach 
     student-id: 7444323
-  - name: Vitus Grofl 
+  - name: Vitus Groß 
     student-id: 7380537
 contact: mkatter1@smail.uni-koeln.de # Specify one contact for the project
 supervisor: "Univ.-Prof. Dr. Wolfgang Ketter"
