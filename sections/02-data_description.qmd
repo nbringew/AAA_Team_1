@@ -53,6 +53,27 @@ facilities, amenities, tourism-related places, and other urban activity points. 
 as contextual spatial information and can help explain why some areas generate more taxi
 demand than others.
 
+## Electricity Price Data
+
+The reinforcement-learning analysis additionally uses historical EPEX SPOT day-ahead
+electricity prices obtained through the Fraunhofer ISE Energy-Charts API. The underlying data
+originate from ENTSO-E/EPEX SPOT and cover the German--Luxembourg bidding zone (DE-LU) from
+January through March 2025. Prices are reported hourly in EUR/MWh and converted to EUR/kWh for
+the charging-cost calculation.
+
+Only the daily charging window from 14:00 to 16:00 is required for the simulated electric
+taxi. The two hourly observations for each day are therefore linearly interpolated to eight
+15-minute decision steps, matching the temporal resolution of the charging environment. This
+produces 90 daily price profiles with eight observations each. The day-ahead prices are known
+to the price-aware agent when it makes its charging decisions and allow it to shift charging
+towards less expensive intervals.
+
+The realized procurement prices used for billing in the simulation are not a separate
+observed dataset. They are modeled as the EPEX day-ahead prices plus a zero-mean random
+deviation, representing short-term uncertainty around the published market expectation. This
+distinction makes it possible to evaluate whether advance price information improves the
+charging policy while the price ultimately paid remains uncertain.
+
 ## Granularity and Limitations
 
 The raw taxi data are trip-level observations. For prediction, they are aggregated into

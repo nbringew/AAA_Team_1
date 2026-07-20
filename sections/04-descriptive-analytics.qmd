@@ -1,0 +1,99 @@
+# Descriptive Analytics
+
+The descriptive analysis examines when and where taxi demand occurs, how trips differ in
+length, duration, and price, and whether a small number of spatial hot spots account for a
+large share of observed demand. Unless stated otherwise, the results in this section refer to
+the cleaned dataset of 8,470,252 trips between January 2024 and May 2026.
+
+## Temporal Demand Patterns
+
+Demand follows a pronounced daily cycle. The lowest volume occurs at 03:00, after which the
+number of pickups increases rapidly during the morning. Demand remains high from late morning
+through the evening and reaches its maximum at 17:00, consistent with commuting and
+after-work travel. It then decreases steadily during the evening. Aggregating the data into
+four-hour intervals smooths short-lived fluctuations while preserving this overall cycle,
+which supports the use of both hourly and four-hour windows in the predictive analysis.
+
+The weekday profile is equally distinct. Normalized by the number of observed calendar days,
+Thursday has the highest average demand at approximately 18,316 trips per day, followed by
+Wednesday at 17,771. Demand is substantially lower on Saturday (12,821) and reaches its weekly
+minimum on Sunday (12,034). The initially plausible expectation of a strong late-night
+weekend peak is not supported by the hourly weekend profile. Taxi demand in this dataset is
+therefore more closely associated with regular weekday mobility, business activity, and
+commuting than with weekend nightlife alone. Monthly volumes vary as well, but comparisons
+across years must be interpreted cautiously because 2026 is only observed through May and the
+underlying portal data have not accumulated uniformly across all months.
+
+## Trip Characteristics and Idle Time
+
+Trip characteristics are strongly right-skewed: most rides are relatively short, while a
+smaller number of long airport and cross-city journeys raise the averages. The median trip is
+3.95 miles long and takes 16.15 minutes, compared with means of 7.18 miles and 21.12 minutes.
+The median metered fare is \$15.56 and the median total charge is \$18.20; the corresponding
+means are \$22.27 and \$27.36. This difference between medians and means confirms that a small
+upper tail of long and expensive trips has a material effect on aggregate revenue and vehicle
+utilization. For a fleet operator, the median describes a typical assignment more reliably,
+whereas the mean is more relevant for total energy and capacity planning.
+
+Idle time can in principle be approximated as the interval between a taxi's recorded trip end
+and its next recorded trip start. However, the current exploratory notebook calculates this
+measure after drawing a random sample of trips. Because intermediate trips are then omitted,
+the resulting gaps are artificially inflated and cannot be interpreted as operational idle
+time. No idle-time estimate is therefore reported here. A valid estimate requires sorting the
+complete dataset by taxi identifier, calculating consecutive gaps before sampling, and
+separating genuine waiting time from off-shift periods and incomplete reporting.
+
+## Spatial Demand and Resolution
+
+Pickup demand is substantially more concentrated than a city-wide view would suggest. Among
+trips with a reported pickup community area, Near North Side accounts for 22.65%, O'Hare for
+21.70%, the Loop for 16.65%, and Near West Side for 10.24%. Together, these four areas generate
+more than 70% of spatially assigned pickups. The pattern links demand to three types of urban
+activity: the central business and tourism districts, major transport hubs, and airport
+traffic. Pickup and drop-off density maps show broadly similar central concentrations, while
+airport trips create distinct peripheral peaks.
+
+The choice of spatial and temporal resolution changes what can be learned from these patterns.
+Community areas provide stable, interpretable operating zones but conceal substantial
+within-area variation. Census tracts and H3 hexagons reveal more localized structure, yet the
+counts become sparse and more sensitive to privacy masking and centroid assignment. Likewise,
+hourly bins retain short demand peaks but are noisier, whereas four-hour bins provide a more
+stable signal for planning and prediction. The analysis therefore uses coarse units for robust
+city-wide comparison and finer units where local positioning decisions justify the additional
+variance.
+
+## Spatial Hot-Spot Detection
+
+To identify hot spots more systematically, a Gaussian Mixture Model (GMM) is fitted to the
+tract-precision pickup locations in the 2025 data. The GMM acts as a parametric spatial kernel
+density estimator: each component has a center, covariance ellipse, and estimated share of
+total pickup demand. To avoid interpreting privacy-induced community-area centroids as precise
+locations, the model uses 2,787,934 tract-resolved pickups at 421 locations inside Chicago.
+Model comparison indicates an interpretable elbow at six components; a 100-meter covariance
+floor prevents artificial point masses below the approximately 600-meter empirical spatial
+resolution of the centroid data.
+
+{{< embed notebooks/02_gmm.ipynb#fig-gmm-hotspots >}}
+
+The fitted surface confirms that demand is highly concentrated. The five largest components
+cover approximately 97% of tract-resolved pickups. Three components represent the extended
+downtown area and jointly account for about 73%: River North/Streeterville (approximately
+36%), the Union/Ogilvie station district (24%), and the Loop corridor (14%). O'Hare forms a
+separate component with roughly 21% of demand, while Midway contributes about 3%. The spatial
+centers coincide with employment, rail infrastructure, hotels, tourism, nightlife, and airport
+terminals rather than emerging as arbitrary statistical clusters.
+
+The principal hot-spot locations remain broadly stable between day and night, but their
+relative importance changes. During the day, the central-business components jointly account
+for approximately 52% of demand and O'Hare for 18%. At night, O'Hare's share rises to about
+36%, River North retains approximately 26%, and the Loop's relative share falls. Absolute
+night-time demand is nevertheless lower. Operationally, the result suggests rebalancing a
+fleet between a stable set of major zones rather than attempting uniform city-wide coverage:
+vehicles should be concentrated more strongly around the CBD during the day and shifted toward
+airports and entertainment districts later in the day.
+
+These findings describe observed and served taxi demand, not all latent ride-hailing demand.
+Centroid coordinates prevent street-level interpretation, privacy masking understates some
+low-volume tracts, and taxi regulations may make airports more prominent than they would be
+for app-based ride-hailing services. The hot spots are therefore appropriate for strategic
+staging and charging-infrastructure decisions, but not for precise curb-level placement.

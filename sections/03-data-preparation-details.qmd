@@ -1,4 +1,4 @@
-# Brief data preparation details
+# Data Preparation
 
 The raw taxi export contains 16,086,180 rows across 21 columns. The cleaning pipeline
 concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the
@@ -40,10 +40,3 @@ result out as a single Parquet file. In total, 10.1% of trips (1,620,530 rows) a
 and are handled per analysis.
 
 \noindent The cleaned dataset has 14,465,650 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.
-
-
-<!--
-::: {.content-visible when-format="html"}
-*Draft note: once the notebook cells carry Quarto labels, the null-value overview and outlier plots from `00_data_loading.ipynb` can be embedded directly here instead of restating the numbers.*
-:::
--->

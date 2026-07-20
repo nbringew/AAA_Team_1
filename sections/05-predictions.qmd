@@ -1,4 +1,4 @@
-# Demand Prediction
+# Predictive Analytics
 
 ## Problem Description
 
