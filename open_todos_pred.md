@@ -6,14 +6,10 @@ SVM Notebook:
 - ~~Weighted RMSE aufnehmen~~
 - ~~Top 3 und Bottom 3 Areas (ein graph am ende mit allen models, Eval Week dafür übernehmen)~~
 - (Census Tract, vllt zu teuer für RBF)
+- Census Tract NaN bei weighted skill
 
 NN Notebook:
-- Skill score berechen
-- Ohne Threshold testen
-- Error Metric auf weighted RMSE wechseln
-- Map visualisierung mit Skill
-- CT Notebooks durchlaufen lassen und pushen
-- Markdowns anpassen
+
 
 Allgemein:
 - ~~Neue CSV erstellen lassen mit Model-Ergebnis (alle Metriken pro Model basierend auf Spatial und Time Resolution)~~
