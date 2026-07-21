@@ -5,8 +5,10 @@ SVM Notebook:
 - ~~Time series split auf K-Fold wechseln~~
 - ~~Weighted RMSE aufnehmen~~
 - ~~Top 3 und Bottom 3 Areas (ein graph am ende mit allen models, Eval Week dafür übernehmen)~~
-- (Census Tract, vllt zu teuer für RBF)
-- Census Tract NaN bei weighted skill
+
+- NaN bei weighted skill (teils noch bei SVR)
+- Mean vs Median (skill vs RMSE) -> Größeres Problem, brauchen einen kompletten rerun
+- Census Tract Notebook auf eine Methodology einigen
 
 NN Notebook:
 

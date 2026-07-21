@@ -3,8 +3,8 @@
 Figures below are grouped by resolution, in the same order as the Results section, and cover
 what is not already shown inline there. The most central figures for each resolution (feature
 importance, the skill-vs-demand relationship, and the flat-prediction evidence at tract level)
-appear directly in Results instead of here. NN figures are not yet included, since the NN
-write-up in @sec-cross-cutting is still pending.
+appear directly in Results instead of here. NN figures at census-tract resolution are not yet
+included, since that notebook (`03.06`) is still being finalized.
 
 ## Community Area, 4-Hour Resolution
 
@@ -35,6 +35,19 @@ configuration in the study with positive demand-weighted skill, and only for the
 highest-demand areas among the
 20.](assets/figures/prediction/ca4h_per_area_rbf_tuning.png){#fig-ca4h-per-area-rbf width="80%"}
 
+![NN model comparison, community area, 4h: demand-weighted skill, weighted RMSE, and relative
+MAE for baseline, Shallow NN, and tuned Deep
+NN.](assets/figures/prediction/ca4h_nn_comparison.png){#fig-ca4h-nn-comparison width="95%"}
+
+![Tuned Deep NN per-area skill map, community area, 4h. O'Hare (upper left) is the one clearly
+red (negative-skill) area; nearly everywhere else is pale green
+(mildly positive).](assets/figures/prediction/ca4h_nn_skill_map.png){#fig-ca4h-nn-skill-map width="70%"}
+
+![NN model comparison, community area, 1h: demand-weighted skill, weighted RMSE, and relative
+MAE for baseline, Shallow NN, and tuned Deep NN. Unlike the 4h version
+(@fig-ca4h-nn-comparison), the tuned Deep NN is the only model here to beat the
+baseline.](assets/figures/prediction/ca1h_nn_comparison.png){#fig-ca1h-nn-comparison width="95%"}
+
 ## Census Tract Resolution
 
 ![Scope map: the 179 of 878 census tracts with enough tract-precision data to support a
@@ -56,10 +69,9 @@ tracts.](assets/figures/prediction/tract_skill_map.png){#fig-tract-skill-map wid
 
 ## Pending
 
-- **NN permutation-importance charts** (both time encodings) and NN metric-comparison figures,
-  once the NN sections in Results and @sec-cross-cutting are written.
 - **Full model-comparison table**: skill, weighted RMSE, pooled R²/MAE/RMSE per model, per
   resolution, both families (source data already available in
   `results/model_results_summary.csv`).
-- **1-hour resolution figures**: the `03.02` notebook has not been run to completion, so no
-  saved plot output exists yet to extract from.
+- **1-hour resolution SVR figures**: the `03.02` notebook has no saved execution output (see the
+  Predictive Analytics chapter's Limitations), so no plot output exists yet to extract from.
+- **Census-tract NN figures**: pending `03.06` being finalized.
