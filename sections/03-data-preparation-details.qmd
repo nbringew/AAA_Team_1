@@ -1,8 +1,8 @@
 # Data Preparation
 
-The raw taxi export contains 16,086,180 rows across 21 columns. The cleaning pipeline
+The raw taxi export contains 16,086,196 rows across 21 columns. The cleaning pipeline
 concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the
-result out as a single Parquet file. In total, 10.1% of trips (1,620,530 rows) are removed:
+result out as a single Parquet file. In total, 10.1% of trips (1,620,534 rows) are removed:
 
 1. **Duplicate removal.** Trips are deduplicated on `trip_id` before any other filtering
    (775 rows removed), keeping the first occurrence. Rows without a `trip_id` are set aside
@@ -34,9 +34,9 @@ result out as a single Parquet file. In total, 10.1% of trips (1,620,530 rows) a
    no tip. Trips below Chicago's legal minimum fare (\$3.25 flag-drop) or shorter than
    60 seconds are treated as test or aborted entries and removed, together with trips above the
    99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account
-   for the bulk of all removed rows (1,585,068 of 1,620,530).
+   for the bulk of all removed rows (1,585,072 of 1,620,534).
 
 \noindent `payment_type` and `company` are left untouched throughout; their missing values remain as `NA`
 and are handled per analysis.
 
-\noindent The cleaned dataset has 14,465,650 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.
+\noindent The cleaned dataset has 14,465,662 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.
