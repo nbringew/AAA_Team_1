@@ -81,7 +81,7 @@ workflow:
    - `03.05_prediction_nn_CA_4h.ipynb`
    - `03.06_prediction_nn_CA_1h.ipynb`
 
-8. `notebooks/04_reinforcement_learning_merged.ipynb`  
+8. `notebooks/04_reinforcement_learning.ipynb`  
    Implements the smart-charging environment, trains DQN agents, compares them with heuristic
    baselines, and evaluates operational implications.
 

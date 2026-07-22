@@ -31,7 +31,7 @@ price-aware environment adds the current day-ahead price and the mean remaining 
 price:
 
 $$
-s_t^{EPEX}=[SOC_t,t,C,\pi_t^{DA},\bar{\pi}_{>t}^{DA}].
+s_t^{EPEX}=[SOC_t,t,C,\pi_t^{DA},\bar{\pi}_{\geq t}^{DA}].
 $$
 
 Four discrete actions represent charging powers of 0, 5, 11, and 22 kW. For a 15-minute
@@ -53,16 +53,31 @@ shortage, but the agent must learn the tail risk from sampled experience.
 
 ## Cost Environments and Electricity Prices
 
-Two `gymnasium` environments share the same battery dynamics and hidden-demand process. The
-stylized environment applies a gently increasing tariff from EUR 0.140 to EUR 0.160 per kWh.
+Two `gymnasium` environments share the same battery dynamics and hidden-demand process, but
+use different charging-cost models. The stylized environment defines the cost of selecting
+power $p$ in interval $t$ as
+
+$$
+\operatorname{cost}(t,p)=\alpha_t\exp(p),
+$$
+
+where $\alpha_t$ increases from $2.0\times10^{-10}$ to $7.2\times10^{-10}$ over the charging
+window. The very small coefficients are required because $\exp(22)$ is approximately
+$3.6\times10^9$. Even charging at 22 kW in all eight intervals costs only 11.90 reward units,
+compared with the shortage penalty of EUR 100 per missing kWh. A consequence of this scaling
+is that the costs of 0, 5, and 11 kW are almost indistinguishable, while 22 kW constitutes a
+separate, much more expensive tier. The stylized model should therefore be interpreted as an
+artificial power-dependent reward rather than a realistic electricity tariff.
+
 The EPEX environment uses 90 daily price profiles from the German--Luxembourg bidding zone for
 January through March 2025. Hourly EPEX SPOT day-ahead prices are converted from EUR/MWh to
 EUR/kWh and linearly interpolated to the eight quarter-hour decisions between 14:00 and 16:00.
 The resulting day-ahead prices range from EUR -0.026 to EUR 0.371 per kWh, with a median of EUR
 0.110 per kWh.
 
-The day-ahead profile is observable to the price-aware agent. The price billed in the
-simulation is modeled as
+The price-aware agent observes the current day-ahead price and the mean of the day-ahead prices
+from the current interval onward, rather than the entire future profile. The price billed in
+the simulation is modeled as
 
 $$
 \pi_t=\pi_t^{DA}+\varepsilon_t,
@@ -74,12 +89,14 @@ uncertainty; it is simulated rather than obtained as a second market-price datas
 profiles are loaded from a local cache, with the Fraunhofer ISE Energy-Charts API used only as
 a fallback.
 
-Both environments calculate cost as price multiplied by the energy actually added. This is a
-deliberate deviation from the assignment's quadratic $p^2$ charging-cost specification. The
-implemented model treats energy procurement as the relevant marginal cost and does not impose
-an additional power-dependent grid charge for a single vehicle with at most 22 kW. Results
-therefore answer a dynamic energy-price problem and should not be interpreted as evidence for
-settings in which high charging power itself is costly.
+In the EPEX environment, charging cost is the realized price multiplied by the energy actually
+added. In contrast, the stylized environment charges for the selected power level through the
+exponential expression above. Consequently, both formulations deviate from a purely quadratic
+$p^2$ charging-cost specification: the first experiment emphasizes a strongly nonlinear power
+penalty, whereas the EPEX experiment treats energy procurement as the relevant marginal cost.
+The two environments are therefore complementary experiments rather than directly comparable
+tariffs. In particular, a policy learned under the stylized cost structure cannot be expected
+to remain cost-efficient under real per-kWh prices.
 
 ## Learning Algorithm and Benchmarks
 
@@ -109,28 +126,37 @@ an implementable policy.
 ## Results
 
 In the stylized environment, the greedy heuristic succeeds in 98.9% of the 1,000 episodes and
-achieves a mean reward of -4.548. The price-unaware DQN succeeds in only 70.1% and obtains a
-mean reward of -105.426. The paired reward difference is -100.878 with a 95% confidence
-interval of [-114.107, -87.649]. On the 100-episode oracle subset, mean reward is -5.599 for
-greedy and -1.449 for the oracle. Greedy is therefore not exactly optimal, but it is much more
-reliable than the learned policy. With little systematic price variation, the DQN learns to
-charge near mean demand and underestimates the rare but severe shortage risk, whereas the
-explicit $\mu+2\sigma$ rule provides an effective safety margin.
+achieves a mean reward of -2.581. The price-unaware DQN succeeds in 95.5% and obtains a mean
+reward of -17.201. The paired reward difference (DQN minus greedy) is -14.620, with a 95%
+confidence interval of [-20.667, -8.573]. On the same 100-episode oracle subset, mean reward is
+-3.602 for greedy and -0.198 for the oracle. Greedy is therefore not exactly optimal, but it is
+both more reliable and substantially better in mean reward than the learned policy.
+
+The learned behavior reflects the stylized reward design. Because charging at up to 11 kW is
+almost free relative to charging at 22 kW, the DQN frequently selects 11 kW as a default action
+and escalates to 22 kW only under greater time pressure. It therefore learns a coarse charging
+habit rather than the explicit service-level target used by the greedy heuristic. This result
+also demonstrates that behavior learned under an artificial cost structure need not transfer
+cost-efficiently to a different tariff.
 
 The comparison under EPEX prices leads to the same central reliability concern. Greedy again
-succeeds in 98.9% of episodes, compared with 70.1% for the DQN trained without price data and
-75.9% for the price-aware DQN. Their unconditional mean charging costs are EUR 1.704, EUR
-1.022, and EUR 0.972 per day, respectively. These raw costs cannot be interpreted alone:
-failed DQN episodes are cheaper partly because the agents purchase insufficient energy, and
-their shortage penalties consequently produce much worse mean rewards.
+succeeds in 98.9% of episodes, compared with 95.5% for the DQN trained in the stylized
+environment and 75.9% for the price-aware DQN. Their unconditional mean charging costs are EUR
+1.704, EUR 2.245, and EUR 0.972 per day, respectively. Mean rewards, which also include shortage
+penalties, are -3.759 for greedy, -19.446 for the DQN without EPEX data, and -84.763 for the
+price-aware DQN. The greedy heuristic therefore performs best under the complete objective.
+The price-unaware DQN's tendency to charge liberally at 11 kW is almost free in its training
+environment but expensive when transferred to a real per-kWh tariff.
 
-To isolate charging-time savings, costs are compared only in the 759 episodes in which both
+To examine charging-time savings, costs are also compared in the 759 episodes in which both
 greedy and the price-aware DQN cover demand. Within this subset, the price-aware DQN saves EUR
-0.662 per day, or 43.1%, relative to greedy and is cheaper in 89% of episodes. It also improves
-on the price-unaware DQN in both success rate and mean cost. Policy maps show the intended
-behavior: when SOC is sufficiently high, the price-aware agent charges at high power during
-cheap intervals and waits during expensive ones; when SOC is low or departure approaches,
-charging urgency increasingly dominates price.
+0.662 per day, or 43.1%, relative to greedy and is cheaper in 89% of episodes. Policy maps show
+the intended behavior: when SOC is sufficiently high, the price-aware agent charges at high
+power during cheap intervals and waits during expensive ones; when SOC is low or departure
+approaches, charging urgency increasingly dominates price. However, this conditional comparison
+does not establish that the price-aware DQN is the better overall policy. Even among successful
+episodes, the strategies may purchase different quantities of reserve energy, and the much
+lower overall success rate remains excluded from this cost figure.
 
 The cost advantage nevertheless remains inseparable from inadequate demand insurance. A
 success rate of 75.9% is not operationally acceptable for a taxi fleet, even when costs are
@@ -141,8 +167,8 @@ requires an explicit reliability safeguard.
 
 ## Operational Implications and Limitations
 
-Under nearly flat tariffs, the transparent service-level heuristic is preferable to DQN. Under
-dynamic prices, learned control can exploit cheap intervals, particularly when the vehicle
+In the stylized experiment, the transparent service-level heuristic is preferable to DQN.
+Under dynamic prices, learned control can exploit cheap intervals, particularly when the vehicle
 arrives with sufficient SOC and prices vary substantially within the charging window. A
 practical implementation should place the learned policy behind a safety layer, for example a
 hard minimum-SOC rule during the final intervals, or train it with a stronger asymmetric
