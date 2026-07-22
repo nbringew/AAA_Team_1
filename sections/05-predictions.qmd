@@ -72,11 +72,17 @@ testing on 2026-01-01 through 2026-05-31, over a complete, zero-filled grid of e
 unit crossed with every time window. This means evaluation includes genuine zero-demand periods,
 not only observed trips. SVR hyperparameter search uses `KFold` (3, shuffled): since no lagged
 features are used, there is no autoregressive leakage risk a chronological split would guard
-against, and shuffled folds give an even seasonal mix. The NN training procedure splits the
-training period randomly 80/20 into a fit set and an early-stopping set for the same reason.
+against, and shuffled folds give an even seasonal mix. The NN training procedure instead splits
+the training period into a fit set and an early-stopping set (~80/20) by randomly selecting whole
+*days*, not individual rows: at any given timestamp all 77 areas share identical time/weather
+features and differ only by their area dummy, so a row-random split would leak near-identical
+rows across the two sets. Day-blocking exists specifically to prevent that leakage, which an
+earlier row-random version of this split did not.
 
 A **profile baseline** serves as the reference every model is judged against: historical demand
-per (hour, weekday, month), computed separately per spatial unit. Because it is already computed
+per (hour, weekday, month), computed separately per spatial unit -- except at census-tract
+resolution, where the baseline groups by (hour, weekday) only, dropping month, due to the
+sparser per-tract history at that resolution. Because it is already computed
 separately per unit, it sidesteps the heterogeneity problem described in Modeling Approach
 entirely: it never has to compromise across areas the way a pooled model does, which is the main
 reason it turns out to be such a persistently hard target to beat throughout this section, not
@@ -89,20 +95,30 @@ apples-to-apples claim across the two families.*
 :::
 
 Two metrics are reported, and they are not computed the same way, which matters for reading the
-numbers below correctly. The **skill score**, $1 - \text{MAE}_{\text{model}} /
-\text{MAE}_{\text{baseline}}$ per unit, is a ratio, so each unit's own demand scale cancels out,
-making it comparable across units *and* across resolutions. It is aggregated two ways:
-**demand-weighted skill** (the headline number throughout Results) is the weighted average of
-every unit's own skill score, weighted by that unit's *median* demand, so the highest-volume
-units drive the number, matching a fleet-allocation use case where getting the busiest areas
-right matters most. The **unweighted median** (every unit counted equally) is a guard rail
-against a model that only wins on a few large units and loses everywhere else. Skill score is
-currently computed for SVR only. The **weighted RMSE** is a separate, absolute, trips-per-window
-number reported by both families: pooled RMSE with each row weighted by its unit's train-period
-*mean* demand, not the median used for demand-weighted skill above. It answers a different
-question, how large the errors are in absolute trips once high-volume rows are up-weighted,
-rather than skill's relative one, how much better than the baseline. It is therefore the metric
-used for direct SVR-vs-NN comparison below. Plain, uniformly-weighted pooled R²/MAE/RMSE, and
+numbers below correctly. The **skill score** is a per-unit ratio comparing a model's MAE to the
+profile baseline's MAE for that same unit $i$:
+
+$$\text{skill}_i = 1 - \frac{\text{MAE}_{\text{model},\,i}}{\text{MAE}_{\text{baseline},\,i}}$$
+
+so each unit's own demand scale cancels out (skill 0 = tied with the baseline, 1 = zero error,
+negative = worse than the baseline), making it comparable across units *and* across resolutions.
+It is aggregated two ways: **demand-weighted skill** (the headline number throughout Results)
+weights every unit's own skill score by that unit's *median* demand $m_i$,
+
+$$\text{skill}_{\text{demand-weighted}} = \frac{\sum_i m_i \, \text{skill}_i}{\sum_i m_i},$$
+
+so the highest-volume units drive the number, matching a fleet-allocation use case where getting
+the busiest areas right matters most. The **unweighted median** (every unit counted equally) is a
+guard rail against a model that only wins on a few large units and loses everywhere else. The
+**weighted RMSE** is a separate, absolute, trips-per-window number reported by both families:
+pooled RMSE over every row $j$ in the test set, weighted by that row's unit's train-period *mean*
+demand $\bar{d}_{u(j)}$, not the median used for demand-weighted skill above,
+
+$$\text{weighted RMSE} = \sqrt{\frac{\sum_j \bar{d}_{u(j)} \left(y_j - \hat{y}_j\right)^2}{\sum_j \bar{d}_{u(j)}}}.$$
+
+It answers a different question, how large the errors are in absolute trips once high-volume rows
+are up-weighted, rather than skill's relative one, how much better than the baseline. It is
+therefore the metric used for direct SVR-vs-NN comparison below. Plain, uniformly-weighted pooled R²/MAE/RMSE, and
 the median per-unit R² that recurs throughout Results, are reported only as supporting context,
 not headline numbers: demand varies roughly 1000-fold across units, so unweighted pooled numbers
 are dominated by the busiest few, and per-unit R² is noisy for the many near-zero-demand units
@@ -200,9 +216,74 @@ thin margin.
 : Full model comparison, community area, 4-hour resolution. Per-area models cover only the 20
 areas above the demand threshold, not all 77. {#tbl-ca4h-comparison tbl-colwidths="[32,8,17,14,15,14]"}
 
-**NN.** *To be added.*
+**NN.** The untuned Shallow NN (one hidden layer, `hidden_dim=64`) reaches demand-weighted skill
+**-0.028** (weighted RMSE 144.96, pooled $R^2$ 0.925, 14 of 77 areas negative) with zero tuning
+effort, already close to breaking even and comfortably ahead of every pooled SVR variant in
+@tbl-ca4h-comparison. An architecture search (one-factor-at-a-time over capacity, dropout, weight
+decay, learning rate, and batch size, followed by a combine-the-improving-knobs retrain) selects
+`weight_decay=1e-4` alone as the single best-performing change during the early-stopped search
+phase, reaching demand-weighted skill **+0.034** on that search split; the only other
+individually-improving knob, `batch_size=128`, was also tried combined with it, but that pairing
+scored -0.083 on the same split, far worse than either knob alone, a negative interaction
+discarded in favor of the single best knob. Refit from scratch on the full training set, however,
+the selected `weight_decay=1e-4` configuration's actual performance is **-0.027** (weighted RMSE
+145.93, pooled $R^2$ 0.927, 9 of 77 areas negative) -- essentially level with the untuned Shallow
+NN rather than the clear win its search-phase evaluation of +0.034 suggested. The search's
+early-stopping criterion is evaluated on a smaller held-out slice of the training set than the
+final refit uses, and nothing guarantees the two agree.
 
-**Shared finding.** *To be added once NN results are finalized.*
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ | Fit time |
+|:---|---:|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 139.02 | 0.933 | 1s |
+| Shallow NN (untuned) | -0.028 | 0.097 | 144.96 | 0.925 | 324s |
+| Deep NN (tuned) | -0.027 | 0.071 | 145.93 | 0.927 | 2,333s |
+
+: NN model comparison, community area, 4-hour resolution. {#tbl-ca4h-nn-comparison}
+
+Per-area performance shows the tuned Deep NN did not perform well on the airport (O'Hare,
+community area 76): its demand-weighted skill there is **-0.227**, the single worst area/model
+result in the whole experiment (next-worst area: -0.072), while the untuned Shallow NN loses much
+less on the same area (-0.020), and several other high-demand areas actually *improve* under Deep
+NN tuning (e.g. +0.036 and +0.076 for two other top-demand areas). O'Hare's demand follows flight
+schedules around the clock rather than the commute-driven daily cycle most other areas share; the
+pooled network shares one hour-of-day/weekday representation across all 77 areas plus a per-area
+additive one-hot term, and evidently does not bend that shared temporal shape enough to match
+O'Hare's distinct profile, even though it is in principle expressive enough to do so.
+
+![Deep NN skill vs. median area demand (log scale), community area, 4h. O'Hare (the rightmost,
+highest-demand point) is the one clearly negative outlier; every other high-demand area sits at
+or above zero.](assets/figures/prediction/ca4h_nn_skill_vs_demand.png){#fig-ca4h-nn-skill-vs-demand width="90%"}
+
+An attempt was made to close that specific gap directly: a variant
+(`notebooks/03_prediction/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) added
+explicit O'Hare-by-time-of-day interaction features (the O'Hare one-hot dummy multiplied by each
+hour-of-day harmonic), giving the network direct access to a distinct diurnal shape for O'Hare
+instead of requiring the hidden layer to discover one unaided. This made things worse, not better:
+re-running the full architecture search with these features added produced a tuned Deep NN with
+demand-weighted skill -0.186, worse than without the added features. The change was therefore not
+adopted; the numbers reported above are from the original feature set.
+
+Permutation feature importance on the Shallow NN (@fig-ca4h-nn-feature-importance) lands on the
+same answer SVR's coefficients did (@fig-ca4h-feature-importance): the primary and second
+hour-of-day harmonics dominate by a wide margin, day-of-week and month contribute a little, and
+every weather variable sits at essentially zero -- a different model family and a different
+importance method arriving at the same conclusion, that this demand is driven by the clock, not
+the weather.
+
+![Shallow NN permutation feature importance, community area, 4h: hour-of-day harmonics dominate,
+weather variables sit at essentially
+zero.](assets/figures/prediction/ca4h_nn_feature_importance.png){#fig-ca4h-nn-feature-importance width="80%"}
+
+**Shared finding.** Both model families hit the same wall from a different direction. SVR's single
+global coefficient vector cannot represent per-area heterogeneity at all, so it settles for one
+compromise that loses specifically on the highest-demand areas (@fig-ca4h-skill-vs-demand). The
+NN has the *representational* capacity to learn per-area time interactions through its hidden
+layer, and the untuned Shallow NN gets close to breaking even, but the tuned Deep NN's failure is
+concentrated in exactly the same kind of place: the single highest-demand area whose temporal
+shape looks least like the pooled average. Pooling remains the common thread across both
+families: the one configuration in the entire community-area, 4-hour study with positive
+demand-weighted skill is still the per-area RBF SVR that abandons pooling altogether
+(@tbl-ca4h-comparison), not any pooled NN variant.
 
 ### Community Area, 1-Hour Resolution
 
@@ -221,8 +302,33 @@ Demand-tiered and per-area models were attempted but dropped at this resolution:
 `GridSearchCV`'s parallel fan-out, on top of the larger 1h panel, exceeded available memory.
 
 ::: {.content-visible when-format="html"}
-*NN results at this resolution are pending a completed run.*
+*Verification note: unlike every other number in this section, the SVR figures above could not
+be cross-checked against a saved execution -- `03.02` has no saved cell output and no
+corresponding row in `results/model_results_summary.csv` (see Limitations). Treat this
+subsection's specific figures as unverified until a live run is captured.*
 :::
+
+**NN.** Unlike at 4-hour resolution, the tuned Deep NN wins outright here: demand-weighted skill
+**+0.062** (weighted RMSE 36.26, pooled $R^2$ 0.928), the only NN configuration with positive
+demand-weighted skill anywhere in this study, and better than every SVR variant tried at this
+resolution (best SVR: tuned RBF at -0.331). The untuned Shallow NN stays negative here too (skill
+-0.048, weighted RMSE 42.28, pooled $R^2$ 0.903). Note that this is not a fresh architecture
+search at 1-hour resolution: `03.05` reuses the exact configuration `03.04` selected at 4-hour
+resolution (only the early-stopping epoch count is redetermined on the 1h data), so this result
+is evidence that the 4-hour search's selected configuration transfers well to 1-hour resolution,
+not that a separately-run tuning effort succeeded here where it failed at 4-hour resolution.
+
+![Deep NN skill vs. median area demand (log scale), community area, 1h. Unlike the 4h version
+(@fig-ca4h-nn-skill-vs-demand), no high-demand area is a clear negative
+outlier.](assets/figures/prediction/ca1h_nn_skill_vs_demand.png){#fig-ca1h-nn-skill-vs-demand width="90%"}
+
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ | Fit time |
+|:---|---:|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 39.46 | 0.918 | 2s |
+| Shallow NN (untuned) | -0.048 | 0.118 | 42.28 | 0.903 | 380s |
+| Deep NN (tuned) | +0.062 | 0.090 | 36.26 | 0.928 | 591s |
+
+: NN model comparison, community area, 1-hour resolution. {#tbl-ca1h-nn-comparison}
 
 ### Census Tract Resolution
 
@@ -237,9 +343,12 @@ the remaining areas fall back to the community-area-resolution model. Within sco
 built from tract-precision trips only (never the masked fallback points, which would otherwise
 spike demand artificially onto whichever tract contains a community area's centroid) and scaled
 by each area's inverse retention rate to estimate total demand. Given the smaller per-unit
-training data at this resolution, only a pooled `LinearSVR` is fit; kernel SVR is not attempted,
-following the same compute-cost reasoning established at community-area resolution, now at an
-even smaller per-unit scale. No NN model has been attempted at this resolution. A census-tract,
+training data at this resolution, only a pooled `LinearSVR` is fit and reported; kernel SVR gets
+only a quick, untuned documentation-only snapshot on a subsample and is not tuned or carried
+forward as a candidate, following the same compute-cost reasoning established at community-area
+resolution, now at an
+even smaller per-unit scale. A tract-level NN pipeline (`03.06`) exists but is still being
+finalized and is not reported in this chapter. A census-tract,
 1-hour combination was deliberately not attempted either: it would stack both axes that make
 pooling hard at once, 179 units instead of 77 and the four-fold finer time buckets that already
 sharpened the problem at community-area resolution (@sec-cross-cutting), on top of tract-level
@@ -304,7 +413,21 @@ amplifies error multiplicatively: a small log-space miss becomes a large absolut
 for the highest counts, a penalty the baseline never incurs since it predicts directly on the
 raw scale.
 
-**NN.** *To be added.*
+**NN.** The NN results add a resolution-dependent twist to the pooling story above: the
+architecture that `03.04`'s search selects at 4-hour resolution produces a large, clear win once
+reused at 1-hour resolution (Deep NN demand-weighted skill +0.062, the only positive NN result in the
+study), but is roughly a wash at the 4-hour resolution the search was actually run on (-0.027
+tuned vs. -0.028 untuned), despite a full architecture search and around 39 minutes of fit time.
+That wash
+hides a specific failure, though: essentially all of the tuned Deep NN's shortfall at 4-hour
+resolution is concentrated in one area, O'Hare, whose distinct round-the-clock demand pattern the
+pooled architecture cannot represent even though it has the capacity to in principle -- and an
+attempt to fix that directly, by adding O'Hare-specific time-of-day interaction features, made
+both the O'Hare-specific and the overall result worse rather than better. Combined with the
+architecture search's own selection instability -- the configuration selected on the
+early-stopped search split scored +0.034 there but only -0.027 after refitting on the full
+training set -- this suggests the NN's added flexibility is not yet reliably converted into a
+better fleet-allocation model than the much cheaper profile baseline.
 
 Comparing SVR across resolutions, demand-weighted skill for matching model types is worse at 1h
 than at 4h (-1.016 vs. -0.827 for pooled `LinearSVR`; -0.331 vs. an untested comparison point
@@ -312,9 +435,9 @@ for tuned RBF), suggesting finer time resolution makes the high-demand gap harde
 easier. This is plausibly due to thinner per-window signal and heavier zero-inflation.
 
 ::: {.content-visible when-format="html"}
-*This synthesis is preliminary: it excludes census-tract results (pending a run), NN results at
-1h (pending), and a reconciled SVR-vs-NN weighted-RMSE comparison at 4h (pending the scope/
-baseline fixes noted in @sec-validation). Revisit once all three land.*
+*This synthesis is preliminary: it excludes NN results at census-tract resolution (that notebook
+is still in progress) and a reconciled SVR-vs-NN weighted-RMSE comparison at 4h (pending the
+scope/baseline fixes noted in @sec-validation). Revisit once both land.*
 :::
 
 ### Practical Implications for Fleet Allocation
@@ -334,13 +457,18 @@ the fleet-allocation value, fit each one its own model, and leave the long tail 
 areas to the simple profile baseline, which already handles them about as well as anything
 tested here.
 
+The NN results reinforce this same conclusion from a different angle: even a model with enough
+representational capacity to in principle learn per-area, per-hour patterns still fails hardest,
+at 4-hour resolution, on the single highest-demand area in the panel (O'Hare, community area 76)
+once pooled in with the rest. Whichever model family is ultimately deployed for fleet allocation,
+the highest-value areas likely need their own dedicated treatment rather than a share of one
+pooled model's parameters, regardless of which model family that pooled model comes from.
+
 ## Limitations & Outlook
 
 - **SVR and NN are not yet evaluated on matched scope**: differing demand thresholds and
   baseline definitions (mean vs. median) mean cross-family numbers above are directional, not
   exact, until reconciled.
-- **Skill score is SVR-only**; weighted RMSE is the only metric currently common to both
-  families.
 - **Kernel-SVR tuning at community-area resolution is trustworthy but still loses per area**:
   `GridSearchCV` cross-validated scores track the test set closely (an earlier draft of this
   section claimed the opposite, based on a since-corrected notebook run), but pooled $R^2$
@@ -361,5 +489,32 @@ tested here.
   output and no corresponding row in `results/model_results_summary.csv`, so the figures cited
   in that subsection could not be cross-checked against a live run the way every other number in
   this section was.
+- **The NN architecture search's own selection criterion does not reliably transfer**: at
+  community-area, 4-hour resolution, the search selects `weight_decay=1e-4` as the single best
+  knob based on early-stopped performance on a held-out slice of the training set (demand-weighted
+  skill +0.034 there), then refits it from scratch on the full training set. That refit's actual
+  performance is -0.027, essentially level with the untuned Shallow NN (-0.028) rather than the
+  clear win the search-phase evaluation suggested -- the search is not currently a reliable guide
+  to final, full-train performance, even though this same selected configuration, reused as-is at
+  1-hour resolution (`03.05` does not repeat the search), performs clearly well there; a config
+  transferring well to another resolution is not yet strong evidence the search procedure that
+  produced it is sound.
+- **NN pooling fails hardest on the single highest-demand area**: at community-area, 4-hour
+  resolution, O'Hare (tied for the highest median demand in the panel) scores -0.227 under the
+  tuned Deep NN, the worst result of any area/model pair in this study, while several other
+  high-demand areas actually improve under the same model. This is consistent with O'Hare's
+  round-the-clock, flight-schedule-driven demand differing in shape, not just scale, from most
+  other areas' commute-driven cycle -- exactly the kind of per-area interaction the NN's hidden
+  layer is supposed to be able to learn, but evidently does not here. An attempt to close this gap
+  directly by adding O'Hare-by-time-of-day interaction features
+  (`notebooks/03_prediction/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) made the
+  overall demand-weighted skill worse (-0.186), not better, so that change was not adopted.
+- **NN tuning cost is not yet justified by its results**: the community-area, 4-hour architecture
+  search took roughly 39 minutes of fit time and produced a configuration that essentially
+  matches, rather than beats, the untuned Shallow NN (324s), and both still trail the
+  near-instant profile baseline.
+- **NN results at census-tract resolution are not yet reported**: a tract-level pipeline (`03.06`)
+  exists and has produced results, but it is still being finalized and is excluded from this
+  chapter until it is.
 
 See @sec-appendix for detailed tables and figures.
