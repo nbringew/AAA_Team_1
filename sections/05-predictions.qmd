@@ -255,7 +255,7 @@ highest-demand point) is the one clearly negative outlier; every other high-dema
 or above zero.](assets/figures/prediction/ca4h_nn_skill_vs_demand.png){#fig-ca4h-nn-skill-vs-demand width="90%"}
 
 An attempt was made to close that specific gap directly: a variant
-(`notebooks/03_prediction/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) added
+(`notebooks/03_predictive_analytics/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) added
 explicit O'Hare-by-time-of-day interaction features (the O'Hare one-hot dummy multiplied by each
 hour-of-day harmonic), giving the network direct access to a distinct diurnal shape for O'Hare
 instead of requiring the hidden layer to discover one unaided. This made things worse, not better:
@@ -507,7 +507,7 @@ pooled model's parameters, regardless of which model family that pooled model co
   other areas' commute-driven cycle -- exactly the kind of per-area interaction the NN's hidden
   layer is supposed to be able to learn, but evidently does not here. An attempt to close this gap
   directly by adding O'Hare-by-time-of-day interaction features
-  (`notebooks/03_prediction/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) made the
+  (`notebooks/03_predictive_analytics/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) made the
   overall demand-weighted skill worse (-0.186), not better, so that change was not adopted.
 - **NN tuning cost is not yet justified by its results**: the community-area, 4-hour architecture
   search took roughly 39 minutes of fit time and produced a configuration that essentially

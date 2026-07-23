@@ -71,7 +71,7 @@ Model comparison indicates an interpretable elbow at six components; a 100-meter
 floor prevents artificial point masses below the approximately 600-meter empirical spatial
 resolution of the centroid data.
 
-{{< embed notebooks/02_gmm.ipynb#fig-gmm-hotspots >}}
+{{< embed notebooks/02_descriptive_analytics/02.2_gmm.ipynb#fig-gmm-hotspots >}}
 
 The fitted surface confirms that demand is highly concentrated. The five largest components
 cover approximately 97% of tract-resolved pickups. Three components represent the extended

@@ -15,7 +15,7 @@ The formal citation entries are available, or will be added, in `references.bib`
 
 **Data period:** 2024-01-01 to 2026-05-31
 
-**Retrieval method:** Downloaded in weekly chunks via `notebooks/00_data_loading.ipynb`
+**Retrieval method:** Downloaded in weekly chunks via `notebooks/01_data_exploration/00_data_loading.ipynb`
 
 **Description:**
 Anonymized trip records for all licensed Chicago taxis. The dataset includes start and end
@@ -26,7 +26,7 @@ the centroid of the community area.
 
 **Use in the project:**
 Primary dataset for all analyses. It is downloaded and cleaned in
-`notebooks/00_data_loading.ipynb`. The annual files are combined into the shared analytical
+`notebooks/01_data_exploration/00_data_loading.ipynb`. The annual files are combined into the shared analytical
 dataset `data/chicago_taxi_2024_2026_clean.parquet`. Some analyses, particularly the GMM
 hotspot analysis, additionally use the complete 2025 extract.
 
@@ -42,7 +42,7 @@ hotspot analysis, additionally use the complete 2025 extract.
 
 **Data period:** 2024-01-01 to 2026-05-31
 
-**Retrieval method:** Retrieved once via `notebooks/00_data_loading.ipynb`
+**Retrieval method:** Retrieved once via `notebooks/01_data_exploration/00_data_loading.ipynb`
 
 **Description:**
 Hourly historical weather data for Chicago (41.8781°N, 87.6298°W) covering the entire study
@@ -109,8 +109,8 @@ Official polygon geometry of Chicago's administrative city boundary.
 
 **Use in the project:**
 Defines the study area and provides background geometry for spatial visualizations in
-`notebooks/01.3_data_exploration_spatial.ipynb` and
-`notebooks/01.4_data_exploration_poi_spatial.ipynb`. Stored locally as
+`notebooks/01_data_exploration/01.3_data_exploration_spatial.ipynb` and
+`notebooks/01_data_exploration/01.4_data_exploration_poi_spatial.ipynb`. Stored locally as
 `data/chicago_boundaries.geojson`.
 
 ---
@@ -130,8 +130,8 @@ not available for every trip.
 
 **Use in the project:**
 Used for tract-level spatial exploration, maps, and forecasting models in
-`notebooks/01.3_data_exploration_spatial.ipynb` and the tract notebooks under
-`notebooks/03_prediction/`. Stored locally as `data/census_tracts_chicago.geojson`.
+`notebooks/01_data_exploration/01.3_data_exploration_spatial.ipynb` and the tract notebooks under
+`notebooks/03_predictive_analytics/`. Stored locally as `data/census_tracts_chicago.geojson`.
 
 ---
 
@@ -148,7 +148,7 @@ Points of interest within Chicago obtained from OpenStreetMap. The query retriev
 tags from the categories `amenity`, `tourism`, `shop`, `leisure`, `office`, `healthcare`,
 `historic`, `man_made`, `natural`, `craft`, `sport`, `place`, `railway`, `public_transport`,
 `aeroway`, and `emergency`. The complete Overpass query is documented in
-`notebooks/01.4_data_exploration_poi_spatial.ipynb`.
+`notebooks/01_data_exploration/01.4_data_exploration_poi_spatial.ipynb`.
 
 **Use in the project:**
 Used to analyze the spatial relationship between POIs and taxi demand and to create a POI-count
@@ -183,7 +183,7 @@ converted to EUR/kWh and linearly interpolated to the 15-minute decision interva
 
 **Use in the project:**
 Provides real price profiles for the price-aware reinforcement-learning charging environment
-in `notebooks/04_reinforcement_learning.ipynb`. The prepared price windows are cached locally
+in `notebooks/04_reinforcement_learning/04_reinforcement_learning.ipynb`. The prepared price windows are cached locally
 as `epex_windows_q1_2025.npy`; the API is used as a fallback when the cache is unavailable.
 
 ---
