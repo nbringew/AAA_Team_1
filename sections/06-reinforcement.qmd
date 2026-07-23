@@ -34,8 +34,11 @@ $$
 s_t^{EPEX}=[SOC_t,t,C,\pi_t^{DA},\bar{\pi}_{\geq t}^{DA}].
 $$
 
-Four discrete actions represent charging powers of 0, 5, 11, and 22 kW. For a 15-minute
-interval, the transition is
+The initial experiment uses four discrete charging powers of 0, 5, 11, and 22 kW. Because this
+coarse spacing leads to degenerate behavior under the exponential cost function, a second
+experiment replaces it with the refined grid 0, 4, 8, 12, 16, 20, and 22 kW. Both DQNs are
+retrained from scratch on this grid, which is used for the primary results below. For a
+15-minute interval, the transition is
 
 $$
 SOC_{t+1}=\min(C,SOC_t+p_t\cdot0.25).
@@ -65,9 +68,11 @@ where $\alpha_t$ increases from $2.0\times10^{-10}$ to $7.2\times10^{-10}$ over 
 window. The very small coefficients are required because $\exp(22)$ is approximately
 $3.6\times10^9$. Even charging at 22 kW in all eight intervals costs only 11.90 reward units,
 compared with the shortage penalty of EUR 100 per missing kWh. A consequence of this scaling
-is that the costs of 0, 5, and 11 kW are almost indistinguishable, while 22 kW constitutes a
-separate, much more expensive tier. The stylized model should therefore be interpreted as an
-artificial power-dependent reward rather than a realistic electricity tariff.
+is that the original costs of 0, 5, and 11 kW are almost indistinguishable, while 22 kW
+constitutes a separate, much more expensive tier. The refined grid reduces the jumps between
+adjacent actions and gives the agent more graduated control, although the cost function remains
+strongly nonlinear. The stylized model should therefore be interpreted as an artificial
+power-dependent reward rather than a realistic electricity tariff.
 
 The EPEX environment uses 90 daily price profiles from the German--Luxembourg bidding zone for
 January through March 2025. Hourly EPEX SPOT day-ahead prices are converted from EUR/MWh to
@@ -118,63 +123,66 @@ which corresponds to an approximate 97.7% service level under the assumed normal
 At each step, it spreads the energy still missing from this target over the remaining time and
 selects the smallest sufficient charging power.
 
-An exact brute-force benchmark evaluates all $4^8=65{,}536$ action sequences on a subset of 100
+An exact brute-force benchmark evaluates every action sequence. For the original grid this
+requires $4^8=65{,}536$ sequences and is evaluated on 100 episodes. The refined grid increases
+the search to $7^8=5{,}764{,}801$ sequences, so its EPEX oracle evaluation is restricted to 40
 episodes. This benchmark is an oracle: it knows the realized demand and, in the EPEX setting,
 the realized billed prices in advance. It is therefore a theoretical upper bound rather than
 an implementable policy.
 
 ## Results
 
-In the stylized environment, the greedy heuristic succeeds in 98.9% of the 1,000 episodes and
-achieves a mean reward of -2.581. The price-unaware DQN succeeds in 95.5% and obtains a mean
-reward of -17.201. The paired reward difference (DQN minus greedy) is -14.620, with a 95%
-confidence interval of [-20.667, -8.573]. On the same 100-episode oracle subset, mean reward is
--3.602 for greedy and -0.198 for the oracle. Greedy is therefore not exactly optimal, but it is
-both more reliable and substantially better in mean reward than the learned policy.
+The original four-action experiment reveals an action-space problem. In the stylized
+environment, its price-unaware DQN succeeds in 95.5% of the 1,000 episodes and achieves a mean
+reward of -17.201, compared with 98.9% and -2.581 for greedy. Because charging at 11 kW is
+almost free relative to 22 kW, the learned policy selects 11 kW almost exclusively; its action
+entropy is only 0.039 bits.
 
-The learned behavior reflects the stylized reward design. Because charging at up to 11 kW is
-almost free relative to charging at 22 kW, the DQN frequently selects 11 kW as a default action
-and escalates to 22 kW only under greater time pressure. It therefore learns a coarse charging
-habit rather than the explicit service-level target used by the greedy heuristic. This result
-also demonstrates that behavior learned under an artificial cost structure need not transfer
-cost-efficiently to a different tariff.
+With the refined grid, the price-unaware DQN succeeds in 98.3% of episodes and achieves a mean
+reward of -1.855. Greedy succeeds in 98.9% and obtains -2.058. The DQN's action entropy rises to
+1.522 bits, showing genuinely graduated control rather than collapse onto a single action.
+Action-grid resolution therefore explains much of the original performance gap: in the
+environment in which it is trained, the refined DQN nearly matches the reliability of greedy
+and slightly exceeds its mean reward.
 
-The comparison under EPEX prices leads to the same central reliability concern. Greedy again
-succeeds in 98.9% of episodes, compared with 95.5% for the DQN trained in the stylized
-environment and 75.9% for the price-aware DQN. Their unconditional mean charging costs are EUR
-1.704, EUR 2.245, and EUR 0.972 per day, respectively. Mean rewards, which also include shortage
-penalties, are -3.759 for greedy, -19.446 for the DQN without EPEX data, and -84.763 for the
-price-aware DQN. The greedy heuristic therefore performs best under the complete objective.
-The price-unaware DQN's tendency to charge liberally at 11 kW is almost free in its training
-environment but expensive when transferred to a real per-kWh tariff.
+Under EPEX prices, greedy succeeds in 98.9% of episodes, compared with 98.3% for the refined DQN
+trained in the stylized environment and 75.2% for the refined price-aware DQN. Their
+unconditional mean charging costs are EUR 1.7223, EUR 2.0424, and EUR 0.9931 per day,
+respectively. Mean rewards, which also include shortage penalties, are -3.7775 for greedy,
+-3.8872 for the DQN without EPEX data, and -88.0377 for the price-aware DQN. The
+price-unaware DQN now nearly matches greedy in reliability, but its charging cost remains
+18.8% higher on episodes in which both succeed because its policy was trained against the
+stylized exponential cost rather than real per-kWh prices.
 
-To examine charging-time savings, costs are also compared in the 759 episodes in which both
-greedy and the price-aware DQN cover demand. Within this subset, the price-aware DQN saves EUR
-0.662 per day, or 43.1%, relative to greedy and is cheaper in 89% of episodes. Policy maps show
-the intended behavior: when SOC is sufficiently high, the price-aware agent charges at high
-power during cheap intervals and waits during expensive ones; when SOC is low or departure
+To examine charging-time savings, costs are compared in the 752 episodes in which both greedy
+and the price-aware DQN cover demand. Within this subset, the price-aware DQN saves EUR 0.6296
+per day, or 41.7%, relative to greedy and is cheaper in 88% of episodes. Policy maps show the
+intended behavior: when SOC is sufficiently high, the price-aware agent charges at high power
+during cheap intervals and waits during expensive ones; when SOC is low or departure
 approaches, charging urgency increasingly dominates price. However, this conditional comparison
 does not establish that the price-aware DQN is the better overall policy. Even among successful
 episodes, the strategies may purchase different quantities of reserve energy, and the much
 lower overall success rate remains excluded from this cost figure.
 
-The cost advantage nevertheless remains inseparable from inadequate demand insurance. A
-success rate of 75.9% is not operationally acceptable for a taxi fleet, even when costs are
-lower on successful days. The oracle reaches 100% success at approximately EUR 0.974 per day,
-but it benefits from information unavailable to any real agent. The relevant conclusion is
-therefore that day-ahead information has value for charge timing, while the present DQN still
-requires an explicit reliability safeguard.
+The cost advantage therefore remains inseparable from inadequate demand insurance. A success
+rate of 75.2% is not operationally acceptable for a taxi fleet, even when costs are lower on
+successful days. On the reduced 40-episode sample, the oracle reaches 100% success at
+approximately EUR 0.87 per day, but it benefits from information unavailable to any real
+agent. The relevant conclusion is that day-ahead information has value for charge timing,
+while the present price-aware DQN still requires an explicit reliability safeguard.
 
 ## Operational Implications and Limitations
 
-In the stylized experiment, the transparent service-level heuristic is preferable to DQN.
-Under dynamic prices, learned control can exploit cheap intervals, particularly when the vehicle
-arrives with sufficient SOC and prices vary substantially within the charging window. A
-practical implementation should place the learned policy behind a safety layer, for example a
-hard minimum-SOC rule during the final intervals, or train it with a stronger asymmetric
-shortage objective. Private charging combined with a dynamic electricity contract is the most
-controllable setting for realizing such savings; public charging with fixed tariffs offers
-less opportunity for price-aware scheduling.
+In the stylized experiment, the refined DQN and the transparent service-level heuristic perform
+similarly, while the coarse-grid result demonstrates the sensitivity of DQN to action-space
+design. Under dynamic prices, learned control can exploit cheap intervals, particularly when
+the vehicle arrives with sufficient SOC and prices vary substantially within the charging
+window. However, the present price-aware DQN obtains part of its apparent saving by carrying
+too little reserve. A practical implementation should therefore place the learned policy
+behind a safety layer, for example a hard minimum-SOC rule during the final intervals, or train
+it with a stronger asymmetric shortage objective. Private charging combined with a dynamic
+electricity contract is the most controllable setting for realizing timing-based savings;
+public charging with fixed tariffs offers less opportunity for price-aware scheduling.
 
 The analysis remains a proof of concept. It considers one two-hour charging window, stylized
 battery dynamics, no charging losses or battery degradation, and a fixed normal demand

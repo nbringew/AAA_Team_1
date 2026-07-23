@@ -12,6 +12,7 @@ _freeze/
 # Exception for final outputs
 !docs/report.pdf
 !docs/report.html
+!docs_text_only/report_text_only.pdf
 
 # LaTeX junk
 *.aux
