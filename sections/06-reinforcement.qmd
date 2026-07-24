@@ -80,19 +80,24 @@ EUR/kWh and linearly interpolated to the eight quarter-hour decisions between 14
 The resulting day-ahead prices range from EUR -0.026 to EUR 0.371 per kWh, with a median of EUR
 0.110 per kWh.
 
-The price-aware agent observes the current day-ahead price and the mean of the day-ahead prices
-from the current interval onward, rather than the entire future profile. The price billed in
-the simulation is modeled as
+In this setting, the day-ahead price is treated as a forecast of the true delivery-time price
+rather than the price itself: it is published a day in advance and is therefore legitimately
+known to the agent when it decides, but the electricity is actually procured and billed at
+delivery, when the realized price has moved away from that forecast. The price-aware agent
+observes the current day-ahead price and the mean of the day-ahead prices from the current
+interval onward, rather than the entire future profile. The price billed in the simulation is
+modeled as
 
 $$
 \pi_t=\pi_t^{DA}+\varepsilon_t,
 \qquad \varepsilon_t\sim\mathcal{N}(0,0.015^2)\ \text{EUR/kWh},
 $$
 
-and is not observable before the decision. The deviation represents short-term procurement
-uncertainty; it is simulated rather than obtained as a second market-price dataset. Price
-profiles are loaded from a local cache, with the Fraunhofer ISE Energy-Charts API used only as
-a fallback.
+and is not observable before the decision. The deviation $\varepsilon_t$ represents this
+forecast error -- the short-term procurement uncertainty that separates a day-ahead prediction
+from the actual delivery price -- and is simulated rather than obtained as a second
+market-price dataset. Price profiles are loaded from a local cache, with the Fraunhofer ISE
+Energy-Charts API used only as a fallback.
 
 In the EPEX environment, charging cost is the realized price multiplied by the energy actually
 added. In contrast, the stylized environment charges for the selected power level through the
