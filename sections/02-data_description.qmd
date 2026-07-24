@@ -8,13 +8,12 @@ June data would create an artificial decline in demand.
 ## Taxi Trip Data
 
 The main source is the Chicago Taxi Trips dataset from the City of Chicago Data Portal
-(dataset `ajtu-isnz`). Each row represents one reported trip by a licensed Chicago taxi. Before
+(dataset `Taxi Trips (2024-)`). Each row represents one reported trip by a licensed Chicago taxi. Before
 cleaning, the extract contains 16,086,196 rows and 21 columns. It includes trip timestamps and
 duration, distance, fare components, payment type, taxi company, anonymized identifiers, and
 pickup and dropoff locations.
 
-Locations are reported through Chicago's 77 community areas, census tracts, and centroid
-coordinates. Census tracts provide finer spatial detail but are frequently masked in
+Locations are reported through the identifiers and centroids of Chicago's 77 community areas and 878 census tracts. Census tracts provide finer spatial detail but are frequently masked in
 low-volume areas for privacy. Where tract information is unavailable, the coordinate columns
 may instead contain community-area centroids. This mixed spatial resolution limits fine-grained
 interpretation and is considered during data preparation and spatial analysis.
@@ -48,8 +47,8 @@ section.
 
 ## Granularity and Limitations
 
-Taxi observations are aggregated from individual trips into spatio-temporal demand panels,
-using community areas or census tracts and hourly or four-hour windows. The cleaned taxi data
-contain 14,465,662 rows and 27 columns. Key limitations are privacy-related location masking,
+The cleaned taxi data
+contain 14,465,662 rows and 27 columns. For spatial analytics and predictions, taxi trip observations are aggregated from individual trips into spatio-temporal demand panels,
+using community areas or census tracts and hourly or four-hour windows. Key limitations are privacy-related location masking,
 the reporting lag in recent portal data, mixed spatial precision, and the use of licensed taxi
 trips as a proxy for wider ride-hailing demand.
