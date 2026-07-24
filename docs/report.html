@@ -2,17 +2,17 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Ivan Kamal Mehieddin">
 <meta name="author" content="Nils Bringewatt">
 <meta name="author" content="Maike Katterbach">
-<meta name="author" content="Vitus Grofl">
+<meta name="author" content="Vitus Groß">
 <meta name="dcterms.date" content="2026-04-01">
 
-<title>Project Report Template</title>
+<title>Predicting Urban Taxi Demand and Smart Charging Strategies for Electric Fleets</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -57,10 +57,10 @@ div.csl-indent {
 <script src="report_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="report_files/libs/quarto-html/anchor.min.js"></script>
 <link href="report_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="report_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="report_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="report_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="report_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="report_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -98,12 +98,12 @@ window.Quarto = {
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div><div class="quarto-alternate-notebooks"><h2>Notebooks</h2><ul><li><a href="notebooks\02_descriptive_analytics\02.2_gmm-preview.html"><i class="bi bi-journal-code"></i>Spatial Hot Spots for Trip Demand — Gaussian Mixture Models</a></li></ul></div></div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Project Report Template</h1>
+<h1 class="title">Predicting Urban Taxi Demand and Smart Charging Strategies for Electric Fleets</h1>
 </div>
 
 
@@ -116,7 +116,7 @@ window.Quarto = {
              <p>Ivan Kamal Mehieddin </p>
              <p>Nils Bringewatt </p>
              <p>Maike Katterbach </p>
-             <p>Vitus Grofl </p>
+             <p>Vitus Groß </p>
           </div>
   </div>
     
@@ -152,61 +152,967 @@ window.Quarto = {
 <section id="data-mining-goal" class="level2">
 <h2 class="anchored" data-anchor-id="data-mining-goal">Data Mining Goal</h2>
 <p>The data mining goal is to build a spatio-temporal demand prediction task from raw taxi trip records and external contextual data. Individual trips are aggregated into panels by time window and spatial unit, and the target variable is the number of pickups in each panel cell. Calendar variables, weather data, and spatial identifiers are used as explanatory features.</p>
-<p>The project evaluates whether machine learning methods can predict aggregate taxi demand at useful resolutions. In particular, Support Vector Machine models are trained and compared against simple time-profile baselines. Model performance is assessed using appropriate error metrics and benchmarking, with attention to whether the models perform well not only overall but also in the high-demand areas that matter most for fleet operations.</p>
+<p>The project evaluates whether machine learning models can predict aggregate taxi demand at useful resolutions. In particular, Support Vector Machine models and neural networks are trained and compared against simple time-profile baselines. Model performance is assessed using appropriate error metrics and benchmarking, with attention to whether the models perform well not only overall but also in the high-demand areas that matter most for fleet operations. In a second analytical task, a reinforcement learning approach is used to study how charging decisions for an electric taxi can be optimized under operational constraints.</p>
 </section>
 </section>
-<section id="data" class="level1">
-<h1>Data</h1>
-<p>We combine two data sources covering 2024-01-01 through 2026-05-31: Chicago Taxi Trips, the full set of reported trips pulled from the City of Chicago Data Portal (dataset <code>ajtu-isnz</code>), and hourly weather (temperature, precipitation, snowfall, wind, cloud cover) for Chicago from the Open-Meteo archive API. The taxi data cuts off at the end of May 2026 rather than the pull date because the portal has a reporting lag of several weeks — June 2026 held only 31 rows instead of the roughly 600,000 expected, which would otherwise look like a demand crash in the prediction models.</p>
-<p>The raw taxi export contains 16,086,180 rows across 21 columns. The cleaning pipeline concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the result out as a single Parquet file. In total, 10.1% of trips (1,620,530 rows) are removed:</p>
+<section id="data-description" class="level1">
+<h1>Data Description</h1>
+<p>The analysis combines taxi trip records, hourly weather observations, spatial reference data, and electricity prices. Taxi and weather data cover 2024-01-01 through 2026-05-31. The period ends in May because the city portal reports recent trips with a delay; including the incomplete June data would create an artificial decline in demand.</p>
+<section id="taxi-trip-data" class="level2">
+<h2 class="anchored" data-anchor-id="taxi-trip-data">Taxi Trip Data</h2>
+<p>The main source is the Chicago Taxi Trips dataset from the City of Chicago Data Portal (dataset <code>Taxi Trips (2024-)</code>). Each row represents one reported trip by a licensed Chicago taxi. Before cleaning, the extract contains 16,086,196 rows and 21 columns. It includes trip timestamps and duration, distance, fare components, payment type, taxi company, anonymized identifiers, and pickup and dropoff locations.</p>
+<p>Locations are reported through the identifiers and centroids of Chicago’s 77 community areas and 878 census tracts. Census tracts provide finer spatial detail but are frequently masked in low-volume areas for privacy. Where tract information is unavailable, the coordinate columns may instead contain community-area centroids. This mixed spatial resolution limits fine-grained interpretation and is considered during data preparation and spatial analysis.</p>
+</section>
+<section id="weather-data" class="level2">
+<h2 class="anchored" data-anchor-id="weather-data">Weather Data</h2>
+<p>Hourly weather observations are obtained from the Open-Meteo archive API. The dataset contains 21,168 observations and nine variables for the same period as the taxi data. Variables include temperature, apparent temperature, precipitation, snowfall, wind speed, cloud cover, and WMO weather conditions. Weather is joined to the demand data by timestamp and provides exogenous features that can also be known for future prediction periods.</p>
+</section>
+<section id="spatial-reference-data" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-reference-data">Spatial Reference Data</h2>
+<p>Official boundary files provide polygons for Chicago’s 77 community areas, 878 census tracts, and the city boundary. They support mapping, spatial joins, and demand aggregation at different geographic resolutions. Point-of-interest data from OpenStreetMap add locations such as transport facilities, amenities, and tourism-related places, helping to characterize areas that may generate taxi demand.</p>
+</section>
+<section id="electricity-price-data" class="level2">
+<h2 class="anchored" data-anchor-id="electricity-price-data">Electricity Price Data</h2>
+<p>The reinforcement-learning analysis uses EPEX SPOT day-ahead prices obtained through the Fraunhofer ISE Energy-Charts API. The data cover the German–Luxembourg bidding zone from January through March 2025 and are converted from EUR/MWh to EUR/kWh. For each of the 90 days, prices between 14:00 and 16:00 are transformed into eight 15-minute values matching the charging decisions. These published prices are observable to the price-aware charging agent; the price ultimately billed is simulated by adding a random short-term deviation. Details of this transformation and the simulated price process are given in the reinforcement-learning section.</p>
+</section>
+<section id="granularity-and-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="granularity-and-limitations">Granularity and Limitations</h2>
+<p>The cleaned taxi data contain 14,465,662 rows and 27 columns. For spatial analytics and predictions, taxi trip observations are aggregated from individual trips into spatio-temporal demand panels, using community areas or census tracts and hourly or four-hour windows. Key limitations are privacy-related location masking, the reporting lag in recent portal data, mixed spatial precision, and the use of licensed taxi trips as a proxy for wider ride-hailing demand.</p>
+</section>
+</section>
+<section id="sec-data-preparation" class="level1">
+<h1>Data Preparation</h1>
+<p>The raw taxi export contains 16,086,196 rows across 21 columns. The cleaning pipeline concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the result out as a single Parquet file. In total, 10.1% of trips (1,620,534 rows) are removed:</p>
 <ol type="1">
-<li>Trips are deduplicated on <code>trip_id</code> before any other filtering (775 rows removed), keeping the first occurrence. Rows without a <code>trip_id</code> are set aside first and rejoined afterward, since <code>drop_duplicates</code> would otherwise treat several genuine but ID-less trips as duplicates of each other.</li>
-<li>Chicago reports location at two resolutions: <code>census_tract</code> (fine-grained) and <code>community_area</code> (77 coarse zones covering the whole city). Tracts are missing for over half of trips — not randomly, but because the city masks any tract with too few trips, for privacy. Community areas are far more complete (98.2% pickup, 91.6% dropoff), since they’re only missing when a trip starts or ends outside city limits. Rather than dropping those out-of-city trips, we keep every row and add <code>pickup_flag</code>/<code>dropoff_flag</code> columns marking whether an area is present, so later spatial analyses can filter on the flags without losing the trips for everything else.</li>
-<li>The centroid latitude/longitude columns silently mix resolutions: where a tract exists, they hold its centroid; where it doesn’t, they fall back to the community area’s centroid. We derive a clean area-to-centroid mapping (from exactly the rows where the raw coordinate already is the area centroid) and join it back as separate <code>*_ca_centroid_lat/lon</code> columns, giving a resolution-consistent coordinate for any area-level aggregation.</li>
-<li>Trips missing <code>fare</code>, <code>trip_total</code>, <code>trip_seconds</code>, or <code>trip_miles</code> are dropped (34,687 rows), since no meaningful analysis is possible without them.</li>
-<li>Negative <code>tips</code>/<code>tolls</code>/<code>extras</code> would be removed, though none occur in practice — zero is legitimate (e.g.&nbsp;cash trips report no tip). Trips below Chicago’s legal minimum fare ($3.25 flag-drop) or shorter than 60 seconds are treated as test or aborted entries and removed, together with trips above the 99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account for the bulk of all removed rows (1,585,068 of 1,620,530).</li>
+<li><p><strong>Duplicate removal.</strong> Trips are deduplicated on <code>trip_id</code> before any other filtering (775 rows removed), keeping the first occurrence. Rows without a <code>trip_id</code> are set aside first and rejoined afterward, since <code>drop_duplicates</code> would otherwise treat several genuine but ID-less trips as duplicates of each other.</p></li>
+<li><p><strong>Handling missing spatial identifiers.</strong> Chicago reports location at two resolutions: <code>census_tract</code> (fine-grained) and <code>community_area</code> (77 coarse zones covering the whole city). Tracts are missing for over half of trips — not randomly, but because the city masks any tract with too few trips, for privacy. Community areas are far more complete (98.2% pickup, 91.6% dropoff), since they’re only missing when a trip starts or ends outside city limits. Rather than dropping those out-of-city trips, we keep every row and add <code>pickup_flag</code>/<code>dropoff_flag</code> columns marking whether an area is present, so later spatial analyses can filter on the flags without losing the trips for everything else.</p></li>
+<li><p><strong>Resolution-consistent centroids.</strong> The centroid latitude/longitude columns silently mix resolutions: where a tract exists, they hold its centroid; where it doesn’t, they fall back to the community area’s centroid. We derive a clean area-to-centroid mapping from exactly the rows where the raw coordinate already is the area centroid and join it back as separate <code>*_ca_centroid_lat/lon</code> columns, giving a resolution-consistent coordinate for any area-level aggregation.</p></li>
+<li><p><strong>Removal of incomplete trip records.</strong> Trips missing <code>fare</code>, <code>trip_total</code>, <code>trip_seconds</code>, or <code>trip_miles</code> are dropped (34,687 rows), since no meaningful analysis is possible without them.</p></li>
+<li><p><strong>Outlier and plausibility filtering.</strong> Negative <code>tips</code>/<code>tolls</code>/<code>extras</code> would be removed, though none occur in practice — zero is legitimate, for example for cash trips that report no tip. Trips below Chicago’s legal minimum fare ($3.25 flag-drop) or shorter than 60 seconds are treated as test or aborted entries and removed, together with trips above the 99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account for the bulk of all removed rows (1,585,072 of 1,620,534).</p></li>
 </ol>
 <p><code>payment_type</code> and <code>company</code> are left untouched throughout; their missing values remain as <code>NA</code> and are handled per analysis.</p>
-<p>The cleaned dataset has 14,465,650 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.</p>
-<p><em>Draft note: once the notebook cells carry Quarto labels, the null-value overview and outlier plots from <code>00_data_loading.ipynb</code> can be embedded directly here instead of restating the numbers.</em></p>
+<p>The cleaned dataset has 14,465,662 rows and 27 columns, spanning 2024-01-01 to 2026-05-31. <a href="#tbl-column-reference" class="quarto-xref">Table&nbsp;4</a> in the appendix gives the full column-by-column reference: dtype, completeness, distinct-value count, and description for every column in the cleaned file.</p>
 </section>
-<section id="demand-prediction-support-vector-machines" class="level1">
-<h1>Demand Prediction — Support Vector Machines</h1>
+<section id="descriptive-analytics" class="level1">
+<h1>Descriptive Analytics</h1>
+<p>The descriptive analysis examines when and where taxi demand occurs, how trips differ in length, duration, and price, and whether a small number of spatial hot spots account for a large share of observed demand. Unless stated otherwise, the results in this section refer to the cleaned dataset of 14,465,662 trips between January 2024 and May 2026.</p>
+<section id="temporal-demand-patterns" class="level2">
+<h2 class="anchored" data-anchor-id="temporal-demand-patterns">Temporal Demand Patterns</h2>
+<p>Demand follows a pronounced daily cycle. The lowest volume occurs at 03:00, after which the number of pickups increases rapidly during the morning. Demand remains high from late morning through the evening and reaches its maximum at 17:00, consistent with commuting and after-work travel. It then decreases steadily during the evening. Aggregating the data into four-hour intervals smooths short-lived fluctuations while preserving this overall cycle, which supports the use of both hourly and four-hour windows in the predictive analysis.</p>
+<p>The weekday profile is equally distinct. Normalized by the number of observed calendar days, Thursday has the highest average demand at approximately 18,856 trips per day, followed by Wednesday at 18,358. Demand is substantially lower on Saturday (13,314) and reaches its weekly minimum on Sunday (12,591). The initially plausible expectation of a strong late-night weekend peak is not supported by the hourly weekend profile. Taxi demand in this dataset is therefore more closely associated with regular weekday mobility, business activity, and commuting than with weekend nightlife alone. Monthly volumes vary as well, but comparisons across years must be interpreted cautiously because 2026 is only observed through May and the underlying portal data have not accumulated uniformly across all months.</p>
+</section>
+<section id="trip-characteristics-and-idle-time" class="level2">
+<h2 class="anchored" data-anchor-id="trip-characteristics-and-idle-time">Trip Characteristics and Idle Time</h2>
+<p>Trip characteristics are strongly right-skewed: most rides are relatively short, while a smaller number of long airport and cross-city journeys raise the averages. The median trip is 3.85 miles long and takes 16.00 minutes, compared with means of 7.09 miles and 20.97 minutes. The median metered fare is $15.25 and the median total charge is $17.75; the corresponding means are $22.06 and $27.01. This difference between medians and means confirms that a small upper tail of long and expensive trips has a material effect on aggregate revenue and vehicle utilization. For a fleet operator, the median describes a typical assignment more reliably, whereas the mean is more relevant for total energy and capacity planning.</p>
+<p>Idle time can in principle be approximated as the interval between a taxi’s recorded trip end and its next recorded trip start. The current exploratory notebook does not calculate this measure, and no idle-time estimate is therefore reported here. A valid estimate requires sorting the complete dataset by taxi identifier, calculating consecutive gaps before sampling, and separating genuine waiting time from off-shift periods and incomplete reporting.</p>
+</section>
+<section id="spatial-demand-and-resolution" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-demand-and-resolution">Spatial Demand and Resolution</h2>
+<p>Pickup demand is substantially more concentrated than a city-wide view would suggest. Among trips with a reported pickup community area, Near North Side accounts for 22.99%, O’Hare for 21.02%, the Loop for 16.72%, and Near West Side for 10.33%. Together, these four areas generate more than 70% of spatially assigned pickups. The pattern links demand to three types of urban activity: the central business and tourism districts, major transport hubs, and airport traffic. Pickup and drop-off density maps show broadly similar central concentrations, while airport trips create distinct peripheral peaks.</p>
+<p>The choice of spatial and temporal resolution changes what can be learned from these patterns. Community areas provide stable, interpretable operating zones but conceal substantial within-area variation. Census tracts and H3 hexagons reveal more localized structure, yet the counts become sparse and more sensitive to privacy masking and centroid assignment. Likewise, hourly bins retain short demand peaks but are noisier, whereas four-hour bins provide a more stable signal for planning and prediction. The analysis therefore uses coarse units for robust city-wide comparison and finer units where local positioning decisions justify the additional variance.</p>
+</section>
+<section id="spatial-hot-spot-detection" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-hot-spot-detection">Spatial Hot-Spot Detection</h2>
+<p>To identify hot spots more systematically, a Gaussian Mixture Model (GMM) is fitted to the tract-precision pickup locations in the 2025 data. The GMM acts as a parametric spatial kernel density estimator: each component has a center, covariance ellipse, and estimated share of total pickup demand. To avoid interpreting privacy-induced community-area centroids as precise locations, the model uses 2,787,934 tract-resolved pickups at 421 locations inside Chicago. Model comparison indicates an interpretable elbow at six components; a 100-meter covariance floor prevents artificial point masses below the approximately 600-meter empirical spatial resolution of the centroid data.</p>
+<div class="quarto-embed-nb-cell">
+<div id="cell-fig-gmm-hotspots" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-07-19T08:53:46.844713Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-07-19T08:53:46.844713Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-07-19T08:53:47.309216Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-07-19T08:53:47.309216Z&quot;}}" data-execution_count="9">
+<div class="cell-output cell-output-display">
+<div id="fig-gmm-hotspots" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-gmm-hotspots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="report_files/figure-html/notebooks-02_descriptive_analytics-02.2_gmm-fig-gmm-hotspots-output-1.png" id="fig-gmm-hotspots" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-gmm-hotspots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<a class="quarto-notebook-link" id="nblink-1" href="notebooks\02_descriptive_analytics\02.2_gmm-preview.html#cell-fig-gmm-hotspots">Source: Spatial Hot Spots for Trip Demand — Gaussian Mixture Models</a></div>
+<p>The fitted surface confirms that demand is highly concentrated. The five largest components cover approximately 97% of tract-resolved pickups. Three components represent the extended downtown area and jointly account for about 73%: River North/Streeterville (approximately 36%), the Union/Ogilvie station district (24%), and the Loop corridor (14%). O’Hare forms a separate component with roughly 21% of demand, while Midway contributes about 3%. The spatial centers coincide with employment, rail infrastructure, hotels, tourism, nightlife, and airport terminals rather than emerging as arbitrary statistical clusters.</p>
+<p>The principal hot-spot locations remain broadly stable between day and night, but their relative importance changes. During the day, the central-business components jointly account for approximately 52% of demand and O’Hare for 18%. At night, O’Hare’s share rises to about 36%, River North retains approximately 26%, and the Loop’s relative share falls. Absolute night-time demand is nevertheless lower. Operationally, the result suggests rebalancing a fleet between a stable set of major zones rather than attempting uniform city-wide coverage: vehicles should be concentrated more strongly around the CBD during the day and shifted toward airports and entertainment districts later in the day.</p>
+<p>These findings describe observed and served taxi demand, not all latent ride-hailing demand. Centroid coordinates prevent street-level interpretation, privacy masking understates some low-volume tracts, and taxi regulations may make airports more prominent than they would be for app-based ride-hailing services. The hot spots are therefore appropriate for strategic staging and charging-infrastructure decisions, but not for precise curb-level placement.</p>
+</section>
+</section>
+<section id="predictive-analytics" class="level1">
+<h1>Predictive Analytics</h1>
+<section id="problem-description-1" class="level2">
+<h2 class="anchored" data-anchor-id="problem-description-1">Problem Description</h2>
+<p>We predict taxi pickup demand, defined as the number of trips originating in a spatial unit within a fixed time window. Two model families are used: Support Vector Regression (SVR) and feedforward neural networks (NN). Both are evaluated across several spatio-temporal resolutions: community area at 4-hour and 1-hour windows, and census tract at 4-hour windows. Results below are organized by resolution so the two model families can be compared directly wherever both are available; a synthesis of findings across resolutions and models follows in <a href="#sec-cross-cutting" class="quarto-xref">Section&nbsp;5.5</a>.</p>
+</section>
 <section id="modeling-approach" class="level2">
 <h2 class="anchored" data-anchor-id="modeling-approach">Modeling Approach</h2>
-<p>We predict taxi pickup demand — the number of trips originating in a spatial unit within a fixed time window — using Support Vector Regression (SVM/SVR). Rather than fitting one model per spatial unit, we train a single <strong>pooled model per resolution</strong>: all units are trained together, with spatial identity encoded as fixed-effect dummy variables rather than as separate models. This design choice is motivated by scalability. Fitting hundreds of independent models — one per census tract, for instance — would multiply both training time and maintenance effort, whereas a pooled model reuses the same panel-construction and evaluation code across resolutions and requires only a single fit per experiment.</p>
-<p>The feature set consists of 17 exogenous time and weather variables, including two harmonics (sine/cosine pairs) each for hour-of-day and day-of-week, which allow the model to represent the bimodal morning and evening rush pattern that a single harmonic cannot capture. Community areas are represented through one-hot dummy variables. Per the constraints of this course, no lagged or autoregressive demand features are used; the model relies exclusively on exogenous inputs that would be known in advance of a prediction.</p>
-<p>Because raw demand counts are heavily right-skewed — median demand per area spans roughly three orders of magnitude, from single digits to several hundred trips per window — the regression target is <code>log1p(count)</code>, with predictions back-transformed via a clipped <code>expm1</code>. Without this transformation, squared-error loss would be dominated by a small number of high-demand windows, and the model would effectively ignore the majority of lower-demand areas.</p>
+<p>Both model families share the same task framing: a single <strong>pooled model per experiment</strong>, trained across all spatial units at once, with spatial identity encoded as one-hot fixed-effect dummies rather than fit as separate per-unit models. This scales to hundreds of census tracts without multiplying training time, and lets panel-construction and evaluation code be reused across resolutions. Two families were tried for complementary reasons: SVR (linear and kernelized) is cheap to fit and, in its linear form, interpretable via coefficients; a feedforward network can in principle learn non-linear interactions between spatial identity and time features that a linear model cannot without hand-built interaction terms, at the cost of a larger tuning surface and no direct coefficient interpretation.</p>
+<p>The central obstacle every model in this section has to overcome is that demand is not one distribution, it is dozens (or hundreds) of very different ones. Per-unit demand varies roughly three orders of magnitude across community areas, and the same imbalance only gets sharper at the finer-grained census-tract level, where far more units compete for the same total demand. Each unit also has its own daily and weekly rhythm, not just its own scale: an airport’s demand follows flight schedules and runs around the clock, while a downtown office district peaks at commute hours and goes quiet overnight. A pooled model has to represent all of that with one set of parameters.</p>
+<p>This is a genuinely hard bind for SVR specifically. <code>LinearSVR</code> fits a single global coefficient vector, so it can only find one compromise direction that trades off across every spatial unit at once; it has no mechanism to give a high-demand downtown area its own scale and its own rush-hour shape independent of a quiet residential area’s. A kernel SVR (RBF, polynomial, sigmoid) could in principle represent that kind of heterogeneity through non-linear interactions between spatial identity and time features, but its training cost scales quadratically to cubically in the number of rows, which puts the full multi-hundred-thousand-row pooled training set out of reach. In practice this forces kernel variants onto a small subsample (10,000 rows), nowhere near enough to represent dozens of areas’ worth of individual dynamics, and, as the results below show, does not solve the underlying problem even where the tuning itself is trustworthy.</p>
+<p>Both use the same exogenous feature set: weather (temperature, precipitation, snowfall, wind, cloud cover), cyclical time encodings (sine/cosine pairs for hour-of-day and day-of-week, two harmonics each to capture the bimodal morning/evening rush), month, and weekend/holiday indicators. Per the constraints of this course, no lagged or autoregressive demand features are used. Only inputs known in advance of a prediction are included. Both regress on <code>log1p(count)</code>, with predictions back-transformed via a clipped <code>expm1</code>, since raw demand is heavily right-skewed (<a href="#fig-ca4h-raw-demand" class="quarto-xref">Figure&nbsp;10</a>; median per-unit demand spans roughly three orders of magnitude); without this transform, squared-error loss would be dominated by a handful of high-demand windows.</p>
+<p>At census-tract resolution, one-hot spatial dummies for all 878 tracts would be impractical, so tract-level SVR instead reuses the 76 community-area dummies as a coarse spatial layer and adds tract-level covariates as a fine layer: POI count, tract area, and distance to six empirically-derived demand hot spots (identified separately via a Gaussian Mixture Model over pickup coordinates).</p>
+<p><em>Methodological note (not yet reconciled): SVR models every spatial unit with no demand threshold; the NN pipeline restricts training and evaluation to units with historical median demand at or above a fixed threshold. The two families’ pooled results are therefore not directly comparable at face value until this is addressed or explicitly corrected for.</em></p>
 </section>
-<section id="validation-strategy" class="level2">
-<h2 class="anchored" data-anchor-id="validation-strategy">Validation Strategy</h2>
-<p>Model evaluation follows a chronological holdout: the training window spans January 2024 through December 2025, and the test window spans January through May 2026. All rows are drawn from a complete, zero-filled grid of every spatial unit crossed with every time window, so that models are evaluated on genuine zero-demand periods rather than only on windows with observed trips. Hyperparameter search uses <code>TimeSeriesSplit</code> with three folds, preserving temporal order within the training data.</p>
-<p>Because absolute error metrics such as MAE or RMSE are not comparable across areas of very different demand magnitude, we introduce a <strong>profile baseline</strong> — the train-set mean demand per hour-of-day and weekday combination, computed separately for each spatial unit — as the reference model against which every SVM variant is judged. Performance is then reported as a <strong>skill score</strong>, defined as <span class="math inline">\(1 - \text{MAE}_{\text{model}} / \text{MAE}_{\text{baseline}}\)</span>, computed per unit. Because it is a ratio, each unit’s own demand scale cancels out, making the score comparable across units of very different volume. Skill scores are aggregated in two complementary ways: a demand-weighted mean, which serves as the headline metric because it matches a fleet-allocation use case where high-demand areas matter most, and an unweighted median, which serves as a guard rail against a model that only performs well on a handful of large units.</p>
+<section id="sec-validation" class="level2">
+<h2 class="anchored" data-anchor-id="sec-validation">Validation Strategy</h2>
+<p>Both families use a chronological holdout, training on 2024-01-01 through 2025-12-31 and testing on 2026-01-01 through 2026-05-31, over a complete, zero-filled grid of every spatial unit crossed with every time window. This means evaluation includes genuine zero-demand periods, not only observed trips. SVR hyperparameter search uses <code>KFold</code> (3, shuffled): since no lagged features are used, there is no autoregressive leakage risk a chronological split would guard against, and shuffled folds give an even seasonal mix. The NN training procedure instead splits the training period into a fit set and an early-stopping set (~80/20) by randomly selecting whole <em>days</em>, not individual rows: at any given timestamp all 77 areas share identical time/weather features and differ only by their area dummy, so a row-random split would leak near-identical rows across the two sets. Day-blocking exists specifically to prevent that leakage, which an earlier row-random version of this split did not.</p>
+<p>A <strong>profile baseline</strong> serves as the reference every model is judged against: historical demand per (hour, weekday, month), computed separately per spatial unit – except at census-tract resolution, where the baseline groups by (hour, weekday) only, dropping month, due to the sparser per-tract history at that resolution. Because it is already computed separately per unit, it sidesteps the heterogeneity problem described in Modeling Approach entirely: it never has to compromise across areas the way a pooled model does, which is the main reason it turns out to be such a persistently hard target to beat throughout this section, not any particular weakness of SVR or the NN as an algorithm.</p>
+<p><em>Second reconciliation note: the SVR baseline uses the train-set <strong>mean</strong>; the NN baseline uses the train-set <strong>median</strong>. Different reference points mean “beats the baseline” is not yet an apples-to-apples claim across the two families.</em></p>
+<p>Two metrics are reported, and they are not computed the same way, which matters for reading the numbers below correctly. The <strong>skill score</strong> is a per-unit ratio comparing a model’s MAE to the profile baseline’s MAE for that same unit <span class="math inline">\(i\)</span>:</p>
+<p><span class="math display">\[\text{skill}_i = 1 - \frac{\text{MAE}_{\text{model},\,i}}{\text{MAE}_{\text{baseline},\,i}}\]</span></p>
+<p>so each unit’s own demand scale cancels out (skill 0 = tied with the baseline, 1 = zero error, negative = worse than the baseline), making it comparable across units <em>and</em> across resolutions. It is aggregated two ways: <strong>demand-weighted skill</strong> (the headline number throughout Results) weights every unit’s own skill score by that unit’s <em>median</em> demand <span class="math inline">\(m_i\)</span>,</p>
+<p><span class="math display">\[\text{skill}_{\text{demand-weighted}} = \frac{\sum_i m_i \, \text{skill}_i}{\sum_i m_i},\]</span></p>
+<p>so the highest-volume units drive the number, matching a fleet-allocation use case where getting the busiest areas right matters most. The <strong>unweighted median</strong> (every unit counted equally) is a guard rail against a model that only wins on a few large units and loses everywhere else. The <strong>weighted RMSE</strong> is a separate, absolute, trips-per-window number reported by both families: pooled RMSE over every row <span class="math inline">\(j\)</span> in the test set, weighted by that row’s unit’s train-period <em>mean</em> demand <span class="math inline">\(\bar{d}_{u(j)}\)</span>, not the median used for demand-weighted skill above,</p>
+<p><span class="math display">\[\text{weighted RMSE} = \sqrt{\frac{\sum_j \bar{d}_{u(j)} \left(y_j - \hat{y}_j\right)^2}{\sum_j \bar{d}_{u(j)}}}.\]</span></p>
+<p>It answers a different question, how large the errors are in absolute trips once high-volume rows are up-weighted, rather than skill’s relative one, how much better than the baseline. It is therefore the metric used for direct SVR-vs-NN comparison below. Plain, uniformly-weighted pooled R²/MAE/RMSE, and the median per-unit R² that recurs throughout Results, are reported only as supporting context, not headline numbers: demand varies roughly 1000-fold across units, so unweighted pooled numbers are dominated by the busiest few, and per-unit R² is noisy for the many near-zero-demand units where there is little variance for any model to explain in the first place.</p>
 </section>
-<section id="results-community-area-4-hour-resolution" class="level2">
-<h2 class="anchored" data-anchor-id="results-community-area-4-hour-resolution">Results: Community Area, 4-Hour Resolution</h2>
-<p>The profile baseline achieves a pooled <span class="math inline">\(R^2\)</span> of 0.933 across all 77 community areas, but its per-area median <span class="math inline">\(R^2\)</span> is considerably lower, at 0.304, and 14 of the 77 areas have a negative per-area <span class="math inline">\(R^2\)</span>. These are predominantly low-demand areas, where near-zero trip counts leave little systematic variance for any model — baseline or otherwise — to explain.</p>
-<p>A pooled <code>LinearSVR</code> fit on the full 337,722-row training set achieves a pooled <span class="math inline">\(R^2\)</span> of 0.778, which appears competitive at first glance. However, its demand-weighted skill relative to the baseline is <strong>-0.75</strong>, meaning it systematically underperforms the baseline specifically in the highest-demand areas, even though it wins on a majority of individual areas by the unweighted median (skill of -0.03). This asymmetry arises because every area contributes an equal number of training rows regardless of its demand level, so the model’s shared coefficients are fit predominantly to the low-demand majority. We attempted to correct this by refitting with sample weights proportional to the square root of each area’s median demand, prioritizing high-demand areas during training the same way they are prioritized during evaluation. This improved the demand-weighted skill to -0.61, but at the cost of degrading the majority of areas — 67 of 77 areas now show negative skill, compared to 48 of 77 in the unweighted case — so weighting is better characterized as a trade-off than a resolution of the underlying issue.</p>
-<p>We also evaluated kernelized SVR (RBF, polynomial, and sigmoid kernels). Because exact kernel SVR scales quadratically to cubically with the number of training rows, kernel models were tuned on a random 10,000-row subsample of the training data and evaluated against the full test set. These results proved highly unstable: hyperparameters tuned via <code>GridSearchCV</code> achieved a cross-validated <span class="math inline">\(R^2\)</span> of only 0.088 for the polynomial kernel, yet the same configuration scored <span class="math inline">\(R^2 = -0.032\)</span> on the actual held-out test set — worse than the baseline for 62 of 77 areas — despite an untuned polynomial kernel appearing to perform excellently (<span class="math inline">\(R^2 = 0.875\)</span>) on a single earlier draw of the subsample. We conclude that tuning kernel SVR from a small subsample of a much larger dataset is too high-variance to be reliable at this resolution.</p>
-<p>As a further structural attempt to address the high-demand shortfall, we fit fully separate per-area models — no pooling and no shared coefficients — for the 20 areas with median demand of at least 10 trips per window. Even without any cross-area dilution, most configurations still lose to the profile baseline: default per-area <code>LinearSVR</code> and RBF models score -0.10 and -0.11 on demand-weighted skill, respectively, and per-area hyperparameter tuning only partially closes the gap. The sole configuration across the entire study that achieves a positive demand-weighted skill is a fully tuned per-area RBF SVR, at +0.023 — a small margin, and one under which 12 of the 20 areas are still individually negative.</p>
-<p>Taken together, these results point to a consistent pattern: across every variant we tried — pooled, demand-weighted, demand-tiered, and per-area — the profile baseline proves a surprisingly strong and difficult-to-beat reference specifically where demand is largest. We attribute this to the interaction between the <code>log1p</code> target transformation and its <code>expm1</code> back-transform, which amplifies error multiplicatively rather than additively: a small error in log-space becomes a large absolute error precisely for the highest-count predictions, a penalty the baseline, which predicts directly on the raw count scale, never incurs. Full methodological detail, diagnostic visualizations, and per-area breakdowns are available in <code>notebooks/03.05_prediction_svm_pooled copy.ipynb</code>.</p>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="community-area-4-hour-resolution" class="level3">
+<h3 class="anchored" data-anchor-id="community-area-4-hour-resolution">Community Area, 4-Hour Resolution</h3>
+<p><strong>SVR.</strong> The profile baseline is a much harder reference per-area than pooled numbers suggest (<a href="#fig-ca4h-baseline-r2" class="quarto-xref">Figure&nbsp;11</a>): pooled <span class="math inline">\(R^2\)</span> is 0.933 (weighted RMSE 139.02), but median per-area <span class="math inline">\(R^2\)</span> is only 0.208, with 21 of 77 areas negative, mostly low-demand areas where near-zero counts leave little variance for any model to explain. A pooled <span class="math inline">\(R^2\)</span> is dominated by the handful of highest-volume areas, the heterogeneity problem from Modeling Approach showing up directly in a single number, which is exactly why skill score, not pooled <span class="math inline">\(R^2\)</span>, drives the comparisons below.</p>
+<p>A pooled <code>LinearSVR</code>’s demand-weighted skill is <strong>-0.827</strong> (weighted RMSE 254.94, nearly double the baseline’s): it systematically underperforms the baseline specifically in the highest-demand areas, despite winning on a majority of areas by unweighted median skill (-0.017), since every area contributes an equal number of training rows regardless of demand, so the shared coefficients fit mostly to the low-demand majority (<a href="#fig-ca4h-skill-vs-demand" class="quarto-xref">Figure&nbsp;2</a>). Refitting with sample weights proportional to <span class="math inline">\(\sqrt{\text{median demand} + 1}\)</span> raises demand-weighted skill to -0.675 (weighted RMSE 231.91) but pushes 53 of 77 areas negative (up from 40): reweighting toward the areas the linear model handles worst comes directly at the expense of the areas it handled comparatively well, a trade-off, not a fix, because one global coefficient vector still cannot serve both regimes at once.</p>
+<div id="fig-ca4h-skill-vs-demand" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_skill_vs_demand.png" class="img-fluid figure-img" style="width:65.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Per-area skill vs.&nbsp;median demand (log scale). Skill trends negative as demand increases: the model loses specifically in the areas that matter most for fleet allocation.
+</figcaption>
+</figure>
+</div>
+<p>Feature-coefficient analysis shows what the pooled model actually leans on (<a href="#fig-ca4h-feature-importance" class="quarto-xref">Figure&nbsp;3</a>): the dominant coefficient by a wide margin is the primary daily-cycle harmonic (<code>hour_cos</code>), several times larger than any other feature, followed by its second harmonic and the weekend indicator. Every weather variable (temperature, wind speed, cloud cover, precipitation, snowfall) sits at the bottom of the ranking with a coefficient close to zero: the model has correctly identified that demand is driven by the clock, not the weather, even though it still loses to the baseline on the highest-demand areas (a contrast with the census-tract finding below, where a strong static predictor takes over instead and the time signal disappears).</p>
+<div id="fig-ca4h-feature-importance" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-feature-importance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_feature_importance.png" class="img-fluid figure-img" style="width:75.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-feature-importance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: LinearSVR feature importance, community area. The primary daily-cycle harmonic (<code>hour_cos</code>) dominates by a wide margin; every weather variable sits at the bottom of the ranking.
+</figcaption>
+</figure>
+</div>
+<p>Kernel SVR (RBF, polynomial, sigmoid) was compared on the same 10,000-row subsample necessity established above. A first pass caught a methodological trap: scaling the community-area dummy columns flipped which kernel looked best, since RBF’s distance-based kernel was dominated by the inflated dummy scale, so dummies were left unscaled from then on, as with <code>LinearSVR</code>. The subsample winner (polynomial, degree 2) and RBF were then tuned with <code>GridSearchCV</code> (<code>KFold</code>, 3, shuffled, per Validation Strategy) over a small grid (<code>C</code>/<code>degree</code> for polynomial, <code>C</code>/<code>gamma</code> for RBF). Tuning here is trustworthy, not unstable: cross-validated scores track the test set closely for both (polynomial: CV <span class="math inline">\(R^2 = 0.865\)</span>, test <span class="math inline">\(R^2 = 0.896\)</span>; RBF: CV <span class="math inline">\(R^2 = 0.891\)</span>, test <span class="math inline">\(R^2 = 0.892\)</span>). It still does not solve the underlying problem, though: per-area demand-weighted skill stays negative for both (polynomial -0.221, 49 of 77 areas negative; RBF -0.232, 46 of 77 negative), the same pooled-<span class="math inline">\(R^2\)</span>-looks-good, per-area-skill-does-not gap as plain <code>LinearSVR</code> above. Kernel tuning is therefore documentation only, not the SVM entry carried forward.</p>
+<p>Fully separate per-area models test whether pooling itself is the problem: one dedicated model per area, fit only on that area’s own rows, with no coefficients shared across areas of different scale. This only makes sense above a demand threshold (median <span class="math inline">\(\geq\)</span> 10 trips/window, 20 of 77 areas, <a href="#fig-ca4h-demand-tiers" class="quarto-xref">Figure&nbsp;15</a>): below it, an area’s target has too little variance for any regression model to meaningfully beat its own mean, so the 57 excluded areas keep using the pooled and baseline predictions computed elsewhere instead. This costs real computation: hyperparameters are tuned separately per area (<code>GridSearchCV</code>, <code>TimeSeriesSplit</code>, 3 folds), so tuning becomes 20 grid searches rather than one, roughly 20 to 45 minutes for the RBF grid alone. In exchange, exact kernel SVR, infeasible on the full 337,722-row pooled set, becomes entirely tractable per area, since each area’s own history is only around 4,400 rows. The comparison to pooling is the point, and it is a clear, if narrow, win. Untuned per-area <code>LinearSVR</code> alone reaches demand-weighted skill -0.112, already well ahead of the pooled model’s -0.827, before any tuning. Tuned per-area RBF SVR then becomes the single configuration in the entire study, pooled or per-area, with positive demand-weighted skill: <strong>+0.012</strong> (<a href="#fig-ca4h-per-area-rbf" class="quarto-xref">Figure&nbsp;16</a>); it is no coincidence that the one configuration that wins also abandons pooling. The win is thin, though: median skill is -0.002 and 10 of the 20 areas remain individually negative, even with pooling removed.</p>
+<p><a href="#tbl-ca4h-comparison" class="quarto-xref">Table&nbsp;1</a> collects all ten SVR configurations tried at this resolution side by side. The pattern is consistent across every row but one: pooled or per-area, tuned or not, almost everything loses to the baseline on demand-weighted skill, and the single exception wins by a thin margin.</p>
+<div id="tbl-ca4h-comparison" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[32,8,17,14,15,14]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ca4h-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Full model comparison, community area, 4-hour resolution. Per-area models cover only the 20 areas above the demand threshold, not all 77.
+</figcaption>
+<div aria-describedby="tbl-ca4h-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 8%">
+<col style="width: 17%">
+<col style="width: 14%">
+<col style="width: 15%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: right;">Units</th>
+<th style="text-align: right;">Dem.-weighted skill</th>
+<th style="text-align: right;">Median skill</th>
+<th style="text-align: right;">Weighted RMSE</th>
+<th style="text-align: right;">Pooled <span class="math inline">\(R^2\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Profile baseline</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">139.02</td>
+<td style="text-align: right;">0.933</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LinearSVR, pooled</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">-0.827</td>
+<td style="text-align: right;">-0.017</td>
+<td style="text-align: right;">254.94</td>
+<td style="text-align: right;">0.778</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LinearSVR, weighted</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">-0.675</td>
+<td style="text-align: right;">-0.052</td>
+<td style="text-align: right;">231.91</td>
+<td style="text-align: right;">0.814</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LinearSVR, tiered</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">-0.732</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">243.60</td>
+<td style="text-align: right;">0.800</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">RBF, tuned</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">-0.232</td>
+<td style="text-align: right;">-0.027</td>
+<td style="text-align: right;">176.93</td>
+<td style="text-align: right;">0.892</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Polynomial, tuned</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">-0.221</td>
+<td style="text-align: right;">-0.049</td>
+<td style="text-align: right;">171.71</td>
+<td style="text-align: right;">0.896</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LinearSVR, per-area</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">-0.112</td>
+<td style="text-align: right;">-0.091</td>
+<td style="text-align: right;">156.93</td>
+<td style="text-align: right;">0.905</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LinearSVR, per-area, tuned</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">-0.125</td>
+<td style="text-align: right;">-0.116</td>
+<td style="text-align: right;">161.10</td>
+<td style="text-align: right;">0.901</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">RBF, per-area</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">-0.135</td>
+<td style="text-align: right;">-0.105</td>
+<td style="text-align: right;">163.37</td>
+<td style="text-align: right;">0.897</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>RBF, per-area, tuned</strong></td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;"><strong>+0.012</strong></td>
+<td style="text-align: right;">-0.002</td>
+<td style="text-align: right;">143.80</td>
+<td style="text-align: right;">0.921</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p><strong>NN.</strong> The untuned Shallow NN (one hidden layer, <code>hidden_dim=64</code>) reaches demand-weighted skill <strong>-0.028</strong> (weighted RMSE 144.96, pooled <span class="math inline">\(R^2\)</span> 0.925, 14 of 77 areas negative) with zero tuning effort, already close to breaking even and comfortably ahead of every pooled SVR variant in <a href="#tbl-ca4h-comparison" class="quarto-xref">Table&nbsp;1</a>. An architecture search (one-factor-at-a-time over capacity, dropout, weight decay, learning rate, and batch size, followed by a combine-the-improving-knobs retrain) selects <code>weight_decay=1e-4</code> alone as the single best-performing change during the early-stopped search phase, reaching demand-weighted skill <strong>+0.034</strong> on that search split; the only other individually-improving knob, <code>batch_size=128</code>, was also tried combined with it, but that pairing scored -0.083 on the same split, far worse than either knob alone, a negative interaction discarded in favor of the single best knob. Refit from scratch on the full training set, however, the selected <code>weight_decay=1e-4</code> configuration’s actual performance is <strong>-0.027</strong> (weighted RMSE 145.93, pooled <span class="math inline">\(R^2\)</span> 0.927, 9 of 77 areas negative) – essentially level with the untuned Shallow NN rather than the clear win its search-phase evaluation of +0.034 suggested. The search’s early-stopping criterion is evaluated on a smaller held-out slice of the training set than the final refit uses, and nothing guarantees the two agree.</p>
+<div id="tbl-ca4h-nn-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ca4h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: NN model comparison, community area, 4-hour resolution.
+</figcaption>
+<div aria-describedby="tbl-ca4h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: right;">Dem.-weighted skill</th>
+<th style="text-align: right;">Median skill</th>
+<th style="text-align: right;">Weighted RMSE</th>
+<th style="text-align: right;">Pooled <span class="math inline">\(R^2\)</span></th>
+<th style="text-align: right;">Fit time</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Profile baseline</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">139.02</td>
+<td style="text-align: right;">0.933</td>
+<td style="text-align: right;">1s</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Shallow NN (untuned)</td>
+<td style="text-align: right;">-0.028</td>
+<td style="text-align: right;">0.097</td>
+<td style="text-align: right;">144.96</td>
+<td style="text-align: right;">0.925</td>
+<td style="text-align: right;">324s</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Deep NN (tuned)</td>
+<td style="text-align: right;">-0.027</td>
+<td style="text-align: right;">0.071</td>
+<td style="text-align: right;">145.93</td>
+<td style="text-align: right;">0.927</td>
+<td style="text-align: right;">2,333s</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>Per-area performance shows the tuned Deep NN did not perform well on the airport (O’Hare, community area 76): its demand-weighted skill there is <strong>-0.227</strong>, the single worst area/model result in the whole experiment (next-worst area: -0.072), while the untuned Shallow NN loses much less on the same area (-0.020), and several other high-demand areas actually <em>improve</em> under Deep NN tuning (e.g.&nbsp;+0.036 and +0.076 for two other top-demand areas). O’Hare’s demand follows flight schedules around the clock rather than the commute-driven daily cycle most other areas share; the pooled network shares one hour-of-day/weekday representation across all 77 areas plus a per-area additive one-hot term, and evidently does not bend that shared temporal shape enough to match O’Hare’s distinct profile, even though it is in principle expressive enough to do so.</p>
+<div id="fig-ca4h-nn-skill-vs-demand" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-nn-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_nn_skill_vs_demand.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-nn-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Deep NN skill vs.&nbsp;median area demand (log scale), community area, 4h. O’Hare (the rightmost, highest-demand point) is the one clearly negative outlier; every other high-demand area sits at or above zero.
+</figcaption>
+</figure>
+</div>
+<p>An attempt was made to close that specific gap directly: a variant (<code>notebooks/03_predictive_analytics/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb</code>) added explicit O’Hare-by-time-of-day interaction features (the O’Hare one-hot dummy multiplied by each hour-of-day harmonic), giving the network direct access to a distinct diurnal shape for O’Hare instead of requiring the hidden layer to discover one unaided. This made things worse, not better: re-running the full architecture search with these features added produced a tuned Deep NN with demand-weighted skill -0.186, worse than without the added features. The change was therefore not adopted; the numbers reported above are from the original feature set.</p>
+<p>Permutation feature importance on the Shallow NN (<a href="#fig-ca4h-nn-feature-importance" class="quarto-xref">Figure&nbsp;5</a>) lands on the same answer SVR’s coefficients did (<a href="#fig-ca4h-feature-importance" class="quarto-xref">Figure&nbsp;3</a>): the primary and second hour-of-day harmonics dominate by a wide margin, day-of-week and month contribute a little, and every weather variable sits at essentially zero – a different model family and a different importance method arriving at the same conclusion, that this demand is driven by the clock, not the weather.</p>
+<div id="fig-ca4h-nn-feature-importance" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-nn-feature-importance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_nn_feature_importance.png" class="img-fluid figure-img" style="width:80.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-nn-feature-importance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Shallow NN permutation feature importance, community area, 4h: hour-of-day harmonics dominate, weather variables sit at essentially zero.
+</figcaption>
+</figure>
+</div>
+<p><strong>Shared finding.</strong> Both model families hit the same wall from a different direction. SVR’s single global coefficient vector cannot represent per-area heterogeneity at all, so it settles for one compromise that loses specifically on the highest-demand areas (<a href="#fig-ca4h-skill-vs-demand" class="quarto-xref">Figure&nbsp;2</a>). The NN has the <em>representational</em> capacity to learn per-area time interactions through its hidden layer, and the untuned Shallow NN gets close to breaking even, but the tuned Deep NN’s failure is concentrated in exactly the same kind of place: the single highest-demand area whose temporal shape looks least like the pooled average. Pooling remains the common thread across both families: the one configuration in the entire community-area, 4-hour study with positive demand-weighted skill is still the per-area RBF SVR that abandons pooling altogether (<a href="#tbl-ca4h-comparison" class="quarto-xref">Table&nbsp;1</a>), not any pooled NN variant.</p>
 </section>
-<section id="results-census-tract-resolution" class="level2">
-<h2 class="anchored" data-anchor-id="results-census-tract-resolution">Results: Census Tract Resolution</h2>
-<p><em>To be added.</em> Panel construction and model code for the census-tract resolution are already implemented in <code>notebooks/03.06_prediction_svm_tract.ipynb</code>, reusing the panel-building and evaluation logic developed for the community-area resolution above. Results are pending a completed model run and will be reported in this section.</p>
+<section id="community-area-1-hour-resolution" class="level3">
+<h3 class="anchored" data-anchor-id="community-area-1-hour-resolution">Community Area, 1-Hour Resolution</h3>
+<p><strong>SVR.</strong> This resolution is a deliberate scaling stress test: same 77 areas, roughly 4x the rows, heavier zero-inflation, and a harder baseline too, since it now resolves 24 hourly buckets instead of 6 (baseline weighted RMSE 39.46). A pooled <code>LinearSVR</code>’s demand-weighted skill is <strong>-1.016</strong> (weighted RMSE 76.96), a worse deficit than the 4h resolution’s -0.827 for the same model type: finer time resolution sharpens the heterogeneity problem rather than easing it, since the same 77 areas must now be told apart across four times as many hourly buckets.</p>
+<p>Kernel comparison and tuning on a 10,000-row subsample favor RBF: after tuning, RBF reaches demand-weighted skill -0.331 (weighted RMSE 54.53), polynomial reaches skill -0.361 (weighted RMSE 56.14): the best 1h configurations, though both still negative.</p>
+<p>Demand-tiered and per-area models were attempted but dropped at this resolution: per-area <code>GridSearchCV</code>’s parallel fan-out, on top of the larger 1h panel, exceeded available memory.</p>
+<p><em>Verification note: unlike every other number in this section, the SVR figures above could not be cross-checked against a saved execution – <code>03.02</code> has no saved cell output and no corresponding row in <code>results/model_results_summary.csv</code> (see Limitations). Treat this subsection’s specific figures as unverified until a live run is captured.</em></p>
+<p><strong>NN.</strong> Unlike at 4-hour resolution, the tuned Deep NN wins outright here: demand-weighted skill <strong>+0.062</strong> (weighted RMSE 36.26, pooled <span class="math inline">\(R^2\)</span> 0.928), the only NN configuration with positive demand-weighted skill anywhere in this study, and better than every SVR variant tried at this resolution (best SVR: tuned RBF at -0.331). The untuned Shallow NN stays negative here too (skill -0.048, weighted RMSE 42.28, pooled <span class="math inline">\(R^2\)</span> 0.903). Note that this is not a fresh architecture search at 1-hour resolution: <code>03.05</code> reuses the exact configuration <code>03.04</code> selected at 4-hour resolution (only the early-stopping epoch count is redetermined on the 1h data), so this result is evidence that the 4-hour search’s selected configuration transfers well to 1-hour resolution, not that a separately-run tuning effort succeeded here where it failed at 4-hour resolution.</p>
+<div id="fig-ca1h-nn-skill-vs-demand" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca1h-nn-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca1h_nn_skill_vs_demand.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca1h-nn-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Deep NN skill vs.&nbsp;median area demand (log scale), community area, 1h. Unlike the 4h version (<a href="#fig-ca4h-nn-skill-vs-demand" class="quarto-xref">Figure&nbsp;4</a>), no high-demand area is a clear negative outlier.
+</figcaption>
+</figure>
+</div>
+<div id="tbl-ca1h-nn-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ca1h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: NN model comparison, community area, 1-hour resolution.
+</figcaption>
+<div aria-describedby="tbl-ca1h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: right;">Dem.-weighted skill</th>
+<th style="text-align: right;">Median skill</th>
+<th style="text-align: right;">Weighted RMSE</th>
+<th style="text-align: right;">Pooled <span class="math inline">\(R^2\)</span></th>
+<th style="text-align: right;">Fit time</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Profile baseline</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">39.46</td>
+<td style="text-align: right;">0.918</td>
+<td style="text-align: right;">2s</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Shallow NN (untuned)</td>
+<td style="text-align: right;">-0.048</td>
+<td style="text-align: right;">0.118</td>
+<td style="text-align: right;">42.28</td>
+<td style="text-align: right;">0.903</td>
+<td style="text-align: right;">380s</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Deep NN (tuned)</td>
+<td style="text-align: right;">+0.062</td>
+<td style="text-align: right;">0.090</td>
+<td style="text-align: right;">36.26</td>
+<td style="text-align: right;">0.928</td>
+<td style="text-align: right;">591s</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
 </section>
-<section id="results-1-hour-resolution" class="level2">
-<h2 class="anchored" data-anchor-id="results-1-hour-resolution">Results: 1-Hour Resolution</h2>
-<p><em>To be added.</em></p>
+<section id="census-tract-resolution" class="level3">
+<h3 class="anchored" data-anchor-id="census-tract-resolution">Census Tract Resolution</h3>
+<p>Only 44.6% of trips carry a true tract-level location; the rest are masked to their community area’s centroid for privacy whenever a trip’s originating tract had too few trips in that period. Masking is far from uniform: retention ranges from 0% to 70.9% by community area, with a clean gap in the distribution between roughly 5% and 7%. Areas below that gap have too little tract-precision data to support any tract-level model at all. This is not a modeling choice but a data-availability ceiling, leaving <strong>179 of 878 tracts, across 11 community areas</strong>, in scope (<a href="#fig-tract-scope-map" class="quarto-xref">Figure&nbsp;20</a>); the remaining areas fall back to the community-area-resolution model. Within scope, counts are built from tract-precision trips only (never the masked fallback points, which would otherwise spike demand artificially onto whichever tract contains a community area’s centroid) and scaled by each area’s inverse retention rate to estimate total demand. Given the smaller per-unit training data at this resolution, only a pooled <code>LinearSVR</code> is fit and reported; kernel SVR gets only a quick, untuned documentation-only snapshot on a subsample and is not tuned or carried forward as a candidate, following the same compute-cost reasoning established at community-area resolution, now at an even smaller per-unit scale. A tract-level NN pipeline (<code>03.06</code>) exists but is still being finalized and is not reported in this chapter. A census-tract, 1-hour combination was deliberately not attempted either: it would stack both axes that make pooling hard at once, 179 units instead of 77 and the four-fold finer time buckets that already sharpened the problem at community-area resolution (<a href="#sec-cross-cutting" class="quarto-xref">Section&nbsp;5.5</a>), on top of tract-level data that is already thinner per unit than the community-area panel.</p>
+<p><strong>SVR.</strong> The profile baseline is strong here too (pooled <span class="math inline">\(R^2 = 0.860\)</span>), though the per-tract split is noisier than community-area’s (<a href="#fig-tract-baseline-r2" class="quarto-xref">Figure&nbsp;21</a>): median per-tract <span class="math inline">\(R^2\)</span> is only 0.170, with 38 of 179 tracts negative, the same pooled-versus-per-unit gap seen at community-area resolution, now wider because there are more than twice as many units to average over.</p>
+<p>Pooled <code>LinearSVR</code> fares far worse than at coarser resolutions. Demand-weighted skill, the headline metric everywhere else in this report, is not available here: the weighting computation returns <code>NaN</code> for this model, a data issue not yet root-caused (see Limitations), so unweighted median skill is reported in its place: <strong>-0.259</strong>, with 90 of 179 tracts negative. Weighted RMSE is 355.19, more than double the baseline’s 133, and pooled <span class="math inline">\(R^2\)</span> collapses to 0.026. This is the clearest illustration in the whole study of what a single global coefficient vector does when it cannot represent per-unit heterogeneity: rather than fail gracefully, it gives up on time altogether and settles for representing which tract a row belongs to.</p>
+<p>Feature-coefficient analysis confirms this directly (<a href="#fig-tract-feature-importance-groups" class="quarto-xref">Figure&nbsp;7</a>; <a href="#fig-tract-feature-importance-coefs" class="quarto-xref">Figure&nbsp;22</a>): GMM hotspot-distance features, which take one fixed value per tract, carry 99.6% of total |coefficient| mass despite being only 6 of the 25 continuous features, while time/calendar and weather coefficients are effectively zero. The model has learned each tract’s average demand level from its distance to the nearest hot spot rather than any time-varying signal.</p>
+<div id="fig-tract-feature-importance-groups" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-feature-importance-groups-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_feature_importance_groups.png" class="img-fluid figure-img" style="width:75.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-feature-importance-groups-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Mean |coefficient| by feature group. Hotspot distance versus time/calendar and weather is the clearest single illustration of the pooling-collapses-to-a-per-unit-constant finding described above.
+</figcaption>
+</figure>
+</div>
+<p>Actual-vs-predicted plots for the top-3 tracts confirm this directly (<a href="#fig-tract-actual-vs-predicted" class="quarto-xref">Figure&nbsp;8</a>; <a href="#fig-tract-top-tract" class="quarto-xref">Figure&nbsp;9</a>): predicted demand sits flat near zero across an entire evaluation week while actual and baseline demand both trace the expected daily cycle, a sharp contrast with the community-area case, where the models at least track the shape of demand even while missing the peaks (<a href="#fig-ca4h-top-area" class="quarto-xref">Figure&nbsp;14</a>). With 179 pooled units instead of 77, between-unit demand variance dominates the loss even more than at community-area resolution, and the tract-level hotspot-distance covariates give the optimizer an easy per-unit shortcut, at the cost of the temporal signal the model exists to capture.</p>
+<div id="fig-tract-actual-vs-predicted" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-actual-vs-predicted-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_actual_vs_predicted.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-actual-vs-predicted-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Actual vs.&nbsp;predicted demand, test set, baseline and pooled LinearSVR (log1p scale). LinearSVR predictions cluster into discrete horizontal bands rather than following the diagonal, a signature of a model outputting a level per tract rather than a prediction.
+</figcaption>
+</figure>
+</div>
+<div id="fig-tract-top-tract" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-top-tract-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_top_tract_all_models.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-top-tract-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: Actual vs.&nbsp;all-models predictions for Census Tract 17031760900 (top-3 by demand), one evaluation week. Predicted demand from LinearSVR sits flat near zero across the entire week while actual and baseline demand both trace the expected daily cycle.
+</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="sec-cross-cutting" class="level2">
+<h2 class="anchored" data-anchor-id="sec-cross-cutting">Cross-Cutting Discussion</h2>
+<p>Across every SVR variant tried at community-area resolution (pooled, demand-weighted, demand-tiered, per-area), the profile baseline is a surprisingly strong reference specifically where demand is largest (<a href="#fig-ca4h-skill-map" class="quarto-xref">Figure&nbsp;13</a>; <a href="#fig-tract-skill-map" class="quarto-xref">Figure&nbsp;24</a>), the same heterogeneity problem from Modeling Approach playing out consistently across every variant. It is compounded by an interaction between the <code>log1p</code>/<code>expm1</code> transform and a squared-error-adjacent loss, which amplifies error multiplicatively: a small log-space miss becomes a large absolute error exactly for the highest counts, a penalty the baseline never incurs since it predicts directly on the raw scale.</p>
+<p><strong>NN.</strong> The NN results add a resolution-dependent twist to the pooling story above: the architecture that <code>03.04</code>’s search selects at 4-hour resolution produces a large, clear win once reused at 1-hour resolution (Deep NN demand-weighted skill +0.062, the only positive NN result in the study), but is roughly a wash at the 4-hour resolution the search was actually run on (-0.027 tuned vs.&nbsp;-0.028 untuned), despite a full architecture search and around 39 minutes of fit time. That wash hides a specific failure, though: essentially all of the tuned Deep NN’s shortfall at 4-hour resolution is concentrated in one area, O’Hare, whose distinct round-the-clock demand pattern the pooled architecture cannot represent even though it has the capacity to in principle – and an attempt to fix that directly, by adding O’Hare-specific time-of-day interaction features, made both the O’Hare-specific and the overall result worse rather than better. Combined with the architecture search’s own selection instability – the configuration selected on the early-stopped search split scored +0.034 there but only -0.027 after refitting on the full training set – this suggests the NN’s added flexibility is not yet reliably converted into a better fleet-allocation model than the much cheaper profile baseline.</p>
+<p>Comparing SVR across resolutions, demand-weighted skill for matching model types is worse at 1h than at 4h (-1.016 vs.&nbsp;-0.827 for pooled <code>LinearSVR</code>; -0.331 vs.&nbsp;an untested comparison point for tuned RBF), suggesting finer time resolution makes the high-demand gap harder to close, not easier. This is plausibly due to thinner per-window signal and heavier zero-inflation.</p>
+<p><em>This synthesis is preliminary: it excludes NN results at census-tract resolution (that notebook is still in progress) and a reconciled SVR-vs-NN weighted-RMSE comparison at 4h (pending the scope/baseline fixes noted in <a href="#sec-validation" class="quarto-xref">Section&nbsp;5.3</a>). Revisit once both land.</em></p>
+<section id="practical-implications-for-fleet-allocation" class="level3">
+<h3 class="anchored" data-anchor-id="practical-implications-for-fleet-allocation">Practical Implications for Fleet Allocation</h3>
+<p>The heterogeneity problem also points toward a more realistic deployment strategy than the one tested here: a business does not need one model that works for every spatial unit, including the many low-demand areas that contribute little to a fleet-allocation decision anyway. It needs good predictions specifically where trip volume is high, since that is where allocation decisions have the most impact.</p>
+<p>The one result in this entire study with positive demand-weighted skill, the tuned per-area RBF SVR on the 20 highest-demand community areas (<strong>+0.012</strong>), is also the only one that abandons pooling in favor of a dedicated model per area, for exactly the reasons described above. The practical recommendation this suggests is to not chase one pooled model across all 77 (or 179, or 878) units, but to identify the small set of highest-demand areas that account for most of the fleet-allocation value, fit each one its own model, and leave the long tail of low-demand areas to the simple profile baseline, which already handles them about as well as anything tested here.</p>
+<p>The NN results reinforce this same conclusion from a different angle: even a model with enough representational capacity to in principle learn per-area, per-hour patterns still fails hardest, at 4-hour resolution, on the single highest-demand area in the panel (O’Hare, community area 76) once pooled in with the rest. Whichever model family is ultimately deployed for fleet allocation, the highest-value areas likely need their own dedicated treatment rather than a share of one pooled model’s parameters, regardless of which model family that pooled model comes from.</p>
+</section>
+</section>
+<section id="limitations-outlook" class="level2">
+<h2 class="anchored" data-anchor-id="limitations-outlook">Limitations &amp; Outlook</h2>
+<ul>
+<li><strong>SVR and NN are not yet evaluated on matched scope</strong>: differing demand thresholds and baseline definitions (mean vs.&nbsp;median) mean cross-family numbers above are directional, not exact, until reconciled.</li>
+<li><strong>Kernel-SVR tuning at community-area resolution is trustworthy but still loses per area</strong>: <code>GridSearchCV</code> cross-validated scores track the test set closely (an earlier draft of this section claimed the opposite, based on a since-corrected notebook run), but pooled <span class="math inline">\(R^2\)</span> looking strong (0.89-0.90) still does not translate into positive per-area demand-weighted skill, the same gap seen throughout this section.</li>
+<li><strong>Demand-weighted skill is unavailable (<code>NaN</code>) for the pooled census-tract <code>LinearSVR</code></strong>: the weighting computation fails for this model specifically, not yet root-caused, so that paragraph reports unweighted median skill instead, breaking the otherwise-consistent headline metric used across every other model in this report.</li>
+<li><strong>Pooled SVR at census-tract resolution underperforms its baseline</strong> (median skill -0.259, pooled <span class="math inline">\(R^2 = 0.026\)</span> vs.&nbsp;baseline 0.860): GMM hotspot-distance features absorb 99.6% of coefficient mass, so the model effectively predicts a constant level per tract and ignores time entirely. This is worth revisiting with per-unit time interactions rather than treated as a data-availability issue.</li>
+<li><strong>No rolling-origin backtest</strong> for either family: a single chronological holdout is used throughout.</li>
+<li><strong>1-hour resolution numbers are unverified</strong>: the <code>03.02</code> notebook has no saved execution output and no corresponding row in <code>results/model_results_summary.csv</code>, so the figures cited in that subsection could not be cross-checked against a live run the way every other number in this section was.</li>
+<li><strong>The NN architecture search’s own selection criterion does not reliably transfer</strong>: at community-area, 4-hour resolution, the search selects <code>weight_decay=1e-4</code> as the single best knob based on early-stopped performance on a held-out slice of the training set (demand-weighted skill +0.034 there), then refits it from scratch on the full training set. That refit’s actual performance is -0.027, essentially level with the untuned Shallow NN (-0.028) rather than the clear win the search-phase evaluation suggested – the search is not currently a reliable guide to final, full-train performance, even though this same selected configuration, reused as-is at 1-hour resolution (<code>03.05</code> does not repeat the search), performs clearly well there; a config transferring well to another resolution is not yet strong evidence the search procedure that produced it is sound.</li>
+<li><strong>NN pooling fails hardest on the single highest-demand area</strong>: at community-area, 4-hour resolution, O’Hare (tied for the highest median demand in the panel) scores -0.227 under the tuned Deep NN, the worst result of any area/model pair in this study, while several other high-demand areas actually improve under the same model. This is consistent with O’Hare’s round-the-clock, flight-schedule-driven demand differing in shape, not just scale, from most other areas’ commute-driven cycle – exactly the kind of per-area interaction the NN’s hidden layer is supposed to be able to learn, but evidently does not here. An attempt to close this gap directly by adding O’Hare-by-time-of-day interaction features (<code>notebooks/03_predictive_analytics/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb</code>) made the overall demand-weighted skill worse (-0.186), not better, so that change was not adopted.</li>
+<li><strong>NN tuning cost is not yet justified by its results</strong>: the community-area, 4-hour architecture search took roughly 39 minutes of fit time and produced a configuration that essentially matches, rather than beats, the untuned Shallow NN (324s), and both still trail the near-instant profile baseline.</li>
+<li><strong>NN results at census-tract resolution are not yet reported</strong>: a tract-level pipeline (<code>03.06</code>) exists and has produced results, but it is still being finalized and is excluded from this chapter until it is.</li>
+</ul>
+<p>See <a href="#sec-appendix" class="quarto-xref">Section&nbsp;8</a> for detailed tables and figures.</p>
+</section>
+</section>
+<section id="intelligent-charging-with-reinforcement-learning" class="level1">
+<h1>Intelligent Charging with Reinforcement Learning</h1>
+<section id="problem-setup" class="level2">
+<h2 class="anchored" data-anchor-id="problem-setup">Problem Setup</h2>
+<p>The task is defined around an electric taxi that arrives at its home charger at 14:00 and departs at 16:00. During this two-hour window, a charging decision is made every 15 minutes, resulting in eight decisions per episode. The objective is to minimize charging cost while leaving enough energy for the next shift. Any energy shortage at departure is penalized at EUR 100 per missing kWh – an arbitrarily set severity, chosen to make a shortfall categorically worse than any charging cost rather than derived from an actual operational figure.</p>
+<p>To represent a heterogeneous fleet, battery capacity is sampled uniformly from 40, 60, and 77 kWh in each episode, corresponding to compact, mid-size, and large vehicle classes. Initial state of charge (SOC) is independently sampled between 20% and 60% of capacity. The energy required for the next shift is drawn from <span class="math inline">\(d\sim\mathcal{N}(30,5^2)\)</span> kWh and clipped to the vehicle’s capacity; this value enters the shortage penalty only at the terminal step rather than being observed during charging. The demand distribution is therefore known throughout charging, while the specific requirement remains unresolved until the terminal step and must be hedged against.</p>
+</section>
+<section id="markov-decision-process" class="level2">
+<h2 class="anchored" data-anchor-id="markov-decision-process">Markov Decision Process</h2>
+<p>The charging problem is modeled as a finite-horizon Markov Decision Process. Without day-ahead price information, the state is</p>
+<p><span class="math display">\[
+s_t=[SOC_t,t,C],
+\]</span></p>
+<p>where <span class="math inline">\(SOC_t\)</span> is the current energy level, <span class="math inline">\(t\in\{0,\ldots,8\}\)</span> is the time step, and <span class="math inline">\(C\)</span> is battery capacity. The realized demand is deliberately excluded from the state. When day-ahead price information is included, the state is extended with the current day-ahead price and the mean remaining day-ahead price:</p>
+<p><span class="math display">\[
+s_t^{EPEX}=[SOC_t,t,C,\pi_t^{DA},\bar{\pi}_{\geq t}^{DA}].
+\]</span> Four discrete charging powers of 0, 5, 11, and 22 kW are used initially. Because this coarse spacing leads to degenerate behavior under the exponential cost function, a refined grid of 0, 4, 8, 12, 16, 20, and 22 kW is used instead in a second experiment. Both DQNs are retrained from scratch on this grid, which is used for the primary results below. For a 15-minute interval, the transition is</p>
+<p><span class="math display">\[
+SOC_{t+1}=\min(C,SOC_t+p_t\cdot0.25).
+\]</span></p>
+<p>The step reward is the negative charging cost. After the eighth decision, a terminal penalty is added if <span class="math inline">\(SOC_8&lt;d\)</span>:</p>
+<p><span class="math display">\[
+r_8=-\text{cost}_8-100\max(0,d-SOC_8).
+\]</span></p>
+<p>A cost–reliability trade-off results: additional energy is inexpensive relative to a shortage, while the tail risk must be learned from sampled experience.</p>
+</section>
+<section id="cost-environments-and-electricity-prices" class="level2">
+<h2 class="anchored" data-anchor-id="cost-environments-and-electricity-prices">Cost Environments and Electricity Prices</h2>
+<p>Two <code>gymnasium</code> environments are used, sharing the same battery dynamics and hidden-demand process but differing in charging-cost model. In the stylized environment, the cost of selecting power <span class="math inline">\(p\)</span> in interval <span class="math inline">\(t\)</span> is defined as</p>
+<p><span class="math display">\[
+\operatorname{cost}(t,p)=\alpha_t\exp(p),
+\]</span></p>
+<p>where <span class="math inline">\(\alpha_t\)</span> increases from <span class="math inline">\(2.0\times10^{-10}\)</span> to <span class="math inline">\(7.2\times10^{-10}\)</span> over the charging window. The small coefficients are required because <span class="math inline">\(\exp(22)\)</span> is approximately <span class="math inline">\(3.6\times10^9\)</span>. Even charging at 22 kW in all eight intervals costs only 11.90 reward units, compared with the shortage penalty of EUR 100 per missing kWh. Consequently, the original costs of 0, 5, and 11 kW are almost indistinguishable, while 22 kW constitutes a separate, much more expensive tier. Jumps between adjacent actions are reduced by the refined grid, allowing more graduated control, although the cost function remains nonlinear. The stylized model should therefore be interpreted as an artificial power-dependent reward rather than a realistic electricity tariff.</p>
+<p>Ninety daily price profiles from the German–Luxembourg bidding zone for January through March 2025 are used in the EPEX environment. Hourly EPEX SPOT day-ahead prices are converted from EUR/MWh to EUR/kWh and linearly interpolated to the eight quarter-hour decisions between 14:00 and 16:00. The resulting day-ahead prices range from EUR -0.026 to EUR 0.371 per kWh, with a median of EUR 0.110 per kWh.</p>
+<p>Only the day-ahead price – the current value and the mean of the remaining window, published one day in advance – is observed by the price-aware agent. Charging is billed at the realized price</p>
+<p><span class="math display">\[
+\pi_t=\pi_t^{DA}+\varepsilon_t,
+\qquad \varepsilon_t\sim\mathcal{N}(0,0.015^2)\ \text{EUR/kWh},
+\]</span></p>
+<p>which is not observable before the decision. <span class="math inline">\(\varepsilon_t\)</span> represents the gap between the day-ahead forecast and the delivery price and is simulated rather than drawn from a second price dataset. Price profiles are loaded from a local cache, with the Fraunhofer ISE Energy-Charts API used only as a fallback.</p>
+<p>Both cost formulations deviate from a purely quadratic <span class="math inline">\(p^2\)</span> charging-cost specification defined above: the stylized cost emphasizes a strongly nonlinear power penalty, while the EPEX cost treats energy procurement as the relevant marginal cost. The two environments are therefore complementary experiments rather than directly comparable tariffs, and a policy learned under the stylized cost structure cannot be expected to remain cost-efficient under real per-kWh prices.</p>
+</section>
+<section id="learning-algorithm-and-benchmarks" class="level2">
+<h2 class="anchored" data-anchor-id="learning-algorithm-and-benchmarks">Learning Algorithm and Benchmarks</h2>
+<p>Two Deep Q-Networks (DQN) are trained: a price-unaware agent in the stylized environment and a price-aware agent in the EPEX environment. A multilayer perceptron with two hidden layers of 128 units and identical hyperparameters is used for both. Training lasts 200,000 time steps, equivalent to approximately 25,000 simulated charging days. Performance is evaluated on 1,000 paired episodes, using identical seeds so that capacity, initial SOC, demand, price day, and simulated price deviations match across strategies.</p>
+<p>The operational benchmark is a price-blind greedy heuristic. Because demand is unknown, charging is not targeted at the realized requirement; instead, a fixed target is used:</p>
+<p><span class="math display">\[
+\tau=\min(C,\mu+2\sigma)=\min(C,40\text{ kWh}),
+\]</span></p>
+<p>corresponding to an approximate 97.7% service level under the assumed normal distribution. At each step, the energy still missing from this target is spread over the remaining time, and the smallest sufficient charging power is selected.</p>
+<p>An exact brute-force benchmark is used, evaluating every action sequence. For the original grid this requires <span class="math inline">\(4^8=65{,}536\)</span> sequences, evaluated on 100 episodes. The refined grid increases the search to <span class="math inline">\(7^8=5{,}764{,}801\)</span> sequences, so the EPEX oracle evaluation is restricted to 40 episodes. The realized demand and, in the EPEX setting, the realized billed prices, are known to this oracle benchmark in advance, making it a theoretical upper bound rather than an implementable policy.</p>
+</section>
+<section id="results-1" class="level2">
+<h2 class="anchored" data-anchor-id="results-1">Results</h2>
+<p>An action-space problem is evident in the original four-action experiment. In the stylized environment, the price-unaware DQN succeeds in 95.5% of the 1,000 episodes and achieves a mean reward of -17.201, compared with 98.9% and -2.581 for greedy. Because charging at 11 kW is almost free relative to 22 kW, 11 kW is selected almost exclusively by the learned policy; its action entropy is only 0.039 bits.</p>
+<p>With the refined grid, the price-unaware DQN succeeds in 98.3% of episodes and achieves a mean reward of -1.855. Greedy succeeds in 98.9% and obtains -2.058. The DQN’s action entropy rises to 1.522 bits, indicating graduated control rather than collapse onto a single action. Much of the original performance gap is therefore explained by action-grid resolution: in its training environment, the reliability of greedy is nearly matched by the refined DQN, whose mean reward is slightly higher.</p>
+<p>Under EPEX prices, greedy succeeds in 98.9% of episodes, compared with 98.3% for the refined DQN trained in the stylized environment and 75.2% for the refined price-aware DQN. Their unconditional mean charging costs are EUR 1.7223, EUR 2.0424, and EUR 0.9931 per day, respectively. Mean rewards, which also include shortage penalties, are -3.7775 for greedy, -3.8872 for the DQN without EPEX data, and -88.0377 for the price-aware DQN. The price-unaware DQN now nearly matches greedy in reliability, but its charging cost remains 18.8% higher on episodes in which both succeed, because its policy was trained against the stylized exponential cost rather than real per-kWh prices.</p>
+<p>In the 752 episodes where both greedy and the price-aware DQN cover demand, the price-aware DQN saves EUR 0.6296 per day, or 41.7%, relative to greedy and is cheaper in 88% of episodes. Policy maps show the intended behavior: at sufficiently high SOC, high power is selected during cheap intervals and charging is deferred during expensive ones; as SOC decreases or departure approaches, charging urgency increasingly dominates over price. However, this conditional comparison does not establish that the price-aware DQN is the better overall policy: even among successful episodes, different quantities of reserve energy may be purchased by each strategy, and the much lower overall success rate remains excluded from this cost figure.</p>
+<p>The cost advantage remains inseparable from inadequate demand insurance: a 75.2% success rate is not operationally acceptable for a taxi fleet, even when costs are lower on successful days. On the reduced 40-episode sample, the oracle reaches 100% success at approximately EUR 0.87 per day, but this relies on information unavailable to any real agent. Day-ahead information therefore has value for charge timing, while the price-aware DQN still requires an explicit reliability safeguard.</p>
+</section>
+<section id="operational-implications-and-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="operational-implications-and-limitations">Operational Implications and Limitations</h2>
+<p>In the stylized experiment, the refined DQN and the service-level heuristic perform similarly, while the sensitivity of DQN to action-space design is demonstrated by the coarse-grid result. Under dynamic prices, cheap intervals can be exploited by learned control, particularly when the vehicle arrives with sufficient SOC and prices vary substantially within the charging window. However, part of the apparent saving of the price-aware DQN is attributable to carrying too little reserve. The learned policy should therefore be placed behind a safety layer in a practical implementation, for example a hard minimum-SOC rule during the final intervals, or trained with a stronger asymmetric shortage objective. Private charging combined with a dynamic electricity contract is the most controllable setting for realizing timing-based savings; less opportunity for price-aware scheduling exists under public charging with fixed tariffs.</p>
+<p>The analysis remains a proof of concept. One two-hour charging window, stylized battery dynamics, no charging losses or battery degradation, and a fixed normal demand distribution are considered. A fixed-power flat-rate baseline has not yet been evaluated, and the required sensitivity analysis for alternative demand levels such as 25, 30, and 35 kWh is still missing. Moreover, the linear energy-cost model should either be complemented by the assignment’s quadratic power-cost formulation or retained only with the stated interpretation. These additions are necessary before an infrastructure or deployment recommendation can be made.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<section id="key-findings-for-fleet-operations" class="level2">
+<h2 class="anchored" data-anchor-id="key-findings-for-fleet-operations">Key Findings for Fleet Operations</h2>
+<p>The analysis shows that the greatest immediate value for a potential fleet operator lies in combining robust demand patterns with transparent operational rules rather than relying on a single complex model. Taxi demand is strongly concentrated in both space and time: more than 70% of spatially assigned pickups originate in Near North Side, O’Hare, the Loop, and Near West Side, while demand peaks on weekdays and in the late afternoon. These patterns support a zone-based operating strategy in which vehicles are staged primarily in the central business district and at major transport hubs, with time-dependent rebalancing toward airports and entertainment areas later in the day. The results should, however, be interpreted as observed taxi demand rather than total latent mobility demand.</p>
+</section>
+<section id="demand-forecasting-strategy" class="level2">
+<h2 class="anchored" data-anchor-id="demand-forecasting-strategy">Demand Forecasting Strategy</h2>
+<p>For demand forecasting, model complexity did not consistently translate into operationally better predictions. The historical profile baseline remained difficult to outperform, particularly in high-volume areas. Most pooled SVR and neural-network specifications produced negative demand-weighted skill, although the deep neural network achieved a small positive skill at one-hour resolution and dedicated RBF models for the 20 highest-demand community areas also slightly improved on the baseline. This suggests a hybrid forecasting architecture: use simple profile forecasts for the long tail of low-volume areas and train dedicated models only for the small number of strategically important high-demand zones. Such an approach is easier to maintain, more interpretable, and better aligned with the concentration of fleet-allocation value than one city-wide pooled model.</p>
+</section>
+<section id="charging-strategy-and-reinforcement-learning" class="level2">
+<h2 class="anchored" data-anchor-id="charging-strategy-and-reinforcement-learning">Charging Strategy and Reinforcement Learning</h2>
+<p>The charging experiment leads to a similar conclusion. The price-blind greedy policy reached a 98.9% success rate and clearly outperformed both DQN agents once shortage penalties were included. The price-aware DQN demonstrated that dynamic electricity prices can reduce charging costs when sufficient energy is available, but its 75.9% reliability is not acceptable for fleet operations. Reinforcement learning should therefore not yet control charging without a safety mechanism. A practical system could use price-aware scheduling within hard minimum-SOC and departure-energy constraints, preserving the cost benefit of flexible charging without putting the next shift at risk.</p>
+</section>
+<section id="private-versus-public-charging-infrastructure" class="level2">
+<h2 class="anchored" data-anchor-id="private-versus-public-charging-infrastructure">Private versus Public Charging Infrastructure</h2>
+<p>For a fleet with regular depot returns, private charging infrastructure is the preferable long-term option. It provides predictable availability, operational control, and access to dynamic electricity tariffs, while public chargers introduce travel time, queues, uncertain availability, and generally less control over prices. Public charging nevertheless remains useful as a backup and for vehicles that cannot reliably return to a depot. The recommended strategy is therefore a mixed system: install private chargers at one or more fleet bases near the main operating corridors and use public fast charging for contingencies and peak demand. The present analysis supports this operational direction, but it does not by itself justify a specific number, capacity, or location of chargers because infrastructure costs, grid-connection limits, depot locations, public-charger availability, and complete vehicle duty cycles are not included in the dataset.</p>
+</section>
+<section id="further-analysis-and-external-data" class="level2">
+<h2 class="anchored" data-anchor-id="further-analysis-and-external-data">Further Analysis and External Data</h2>
+<p>Several extensions would strengthen the business case. The existing trip data could be used to construct full vehicle duty cycles and valid idle-time distributions, estimate repositioning distances, test rolling-origin forecasts, and evaluate prediction performance under a common scope and baseline. Charging simulations should cover complete operating days, alternative energy-demand scenarios, charging losses, battery degradation, charger congestion, and a fixed-power or flat-rate benchmark. Particularly useful external sources would include public charger locations, power levels, prices and occupancy; depot and electricity-grid data; real-time traffic and road-network travel times; flight and public-transport schedules; major events; and more complete weather forecasts. These additions would permit a joint location and capacity analysis comparing the total cost of private infrastructure with public-charging fees, detours, waiting time, and lost service revenue.</p>
+</section>
+<section id="advantages-limitations-and-business-recommendation" class="level2">
+<h2 class="anchored" data-anchor-id="advantages-limitations-and-business-recommendation">Advantages, Limitations, and Business Recommendation</h2>
+<p>Overall, the project provides a useful proof of concept rather than a deployment-ready optimization system. Its main advantages are the large trip dataset, the combination of spatial, predictive, and charging analyses, and the use of operationally meaningful benchmarks. Its main limitations are spatial privacy aggregation, incomplete and partly inconsistent model comparisons, the absence of valid idle-time estimates, and simplified charging assumptions. Accordingly, the fleet operator should initially deploy a conservative, interpretable planning system based on demand profiles, hotspot-specific forecasts, and rule-based charging, while collecting the operational and infrastructure data required for a later, safely constrained optimization solution.</p>
+</section>
+</section>
+<section id="sec-appendix" class="level1">
+<h1>Appendix: Detailed Tables and Figures</h1>
+<p>Figures below are grouped by resolution, in the same order as the Results section, and cover what is not already shown inline there. The most central figures for each resolution (feature importance, the skill-vs-demand relationship, and the flat-prediction evidence at tract level) appear directly in Results instead of here. NN figures at census-tract resolution are not yet included, since that notebook (<code>03.06</code>) is still being finalized.</p>
+<section id="cleaned-dataset-column-reference" class="level2">
+<h2 class="anchored" data-anchor-id="cleaned-dataset-column-reference">Cleaned Dataset: Column Reference</h2>
+<p>Every column of <code>data/chicago_taxi_2024_2026_clean.parquet</code> (14,465,650 rows), with dtype, completeness, and distinct-value count as measured on that file, plus what the column means and any caveat carried over from the cleaning steps in <a href="#sec-data-preparation" class="quarto-xref">Section&nbsp;3</a> (e.g.&nbsp;census-tract masking, the two coordinate resolutions).</p>
+<div id="tbl-column-reference" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[16,10,10,10,54]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-column-reference-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Data dictionary, cleaned dataset.
+</figcaption>
+<div aria-describedby="tbl-column-reference-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 54%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Column</th>
+<th style="text-align: left;">Dtype</th>
+<th style="text-align: right;">Non-Null %</th>
+<th style="text-align: right;">Distinct</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>trip_id</code></td>
+<td style="text-align: left;">str</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">14,465,650</td>
+<td style="text-align: left;">Unique trip identifier (hash). Deduplicated in cleaning step 1.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>taxi_id</code></td>
+<td style="text-align: left;">str</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">3,354</td>
+<td style="text-align: left;">Anonymized vehicle identifier (hash).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>trip_start_timestamp</code></td>
+<td style="text-align: left;">datetime64[us]</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">84,660</td>
+<td style="text-align: left;">Local Chicago date/time the trip started.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>trip_end_timestamp</code></td>
+<td style="text-align: left;">datetime64[us]</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">84,664</td>
+<td style="text-align: left;">Local Chicago date/time the trip ended.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>trip_seconds</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">9,722</td>
+<td style="text-align: left;">Trip duration in seconds (&gt;= 60s, capped at the 99.9th percentile).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>trip_miles</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">4,303</td>
+<td style="text-align: left;">Trip distance in miles (&gt; 0, capped at the 99.9th percentile).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>pickup_census_tract</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">44.6%</td>
+<td style="text-align: right;">149</td>
+<td style="text-align: left;">Pickup census tract (FIPS code). Missing for ~55% of trips – privacy masking of low-volume tracts.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dropoff_census_tract</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">43.3%</td>
+<td style="text-align: right;">175</td>
+<td style="text-align: left;">Dropoff census tract (FIPS code). Same privacy masking as pickup.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>pickup_community_area</code></td>
+<td style="text-align: left;">Int64</td>
+<td style="text-align: right;">98.2%</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: left;">One of 77 official community areas for the pickup. Missing means the pickup was outside city limits.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dropoff_community_area</code></td>
+<td style="text-align: left;">Int64</td>
+<td style="text-align: right;">91.6%</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: left;">Community area for the dropoff. Missing means the dropoff was outside city limits.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>fare</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">9,078</td>
+<td style="text-align: left;">Metered fare in USD (&gt;= $3.25 flag-drop minimum).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>tips</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">3,619</td>
+<td style="text-align: left;">Tip amount in USD. 0 is valid – cash trips report no tip.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>tolls</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">560</td>
+<td style="text-align: left;">Toll charges in USD. 0 is valid – most trips use no toll roads.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>extras</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">3,624</td>
+<td style="text-align: left;">Additional surcharges in USD. 0 is valid.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>trip_total</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">14,616</td>
+<td style="text-align: left;">Total amount charged in USD (&gt;= $3.25).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>payment_type</code></td>
+<td style="text-align: left;">category</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">Payment method (Credit Card, Cash, Mobile, Prcard, Unknown, …). Left untouched by cleaning.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>company</code></td>
+<td style="text-align: left;">str</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: left;">Taxi affiliation / operating company. Left untouched by cleaning.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>pickup_centroid_latitude</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">98.2%</td>
+<td style="text-align: right;">571</td>
+<td style="text-align: left;">Pickup latitude: census tract centroid where known, else community area centroid (mixed resolution).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>pickup_centroid_longitude</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">98.2%</td>
+<td style="text-align: right;">565</td>
+<td style="text-align: left;">Pickup longitude, same mixed-resolution rule as latitude.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dropoff_centroid_latitude</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">92.1%</td>
+<td style="text-align: right;">684</td>
+<td style="text-align: left;">Dropoff latitude, same mixed-resolution rule.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dropoff_centroid_longitude</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">92.1%</td>
+<td style="text-align: right;">678</td>
+<td style="text-align: left;">Dropoff longitude, same mixed-resolution rule.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>pickup_flag</code></td>
+<td style="text-align: left;">int64</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">1 if pickup_community_area is present, 0 if missing (outside Chicago).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dropoff_flag</code></td>
+<td style="text-align: left;">int64</td>
+<td style="text-align: right;">100.0%</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">1 if dropoff_community_area is present, 0 if missing (outside Chicago).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>pickup_ca_centroid_lat</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">98.2%</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: left;">Pickup community area centroid latitude – always CA-level resolution (added in step 3).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>pickup_ca_centroid_lon</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">98.2%</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: left;">Pickup community area centroid longitude – always CA-level resolution.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dropoff_ca_centroid_lat</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">91.6%</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: left;">Dropoff community area centroid latitude – always CA-level resolution.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dropoff_ca_centroid_lon</code></td>
+<td style="text-align: left;">float32</td>
+<td style="text-align: right;">91.6%</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: left;">Dropoff community area centroid longitude – always CA-level resolution.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+</section>
+<section id="community-area-4-hour-resolution-1" class="level2">
+<h2 class="anchored" data-anchor-id="community-area-4-hour-resolution-1">Community Area, 4-Hour Resolution</h2>
+<div id="fig-ca4h-raw-demand" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-raw-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_raw_demand.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-raw-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Raw per-window demand is heavily right-skewed, which is why both SVR and NN regress on <code>log1p(count)</code> rather than raw counts.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-baseline-r2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-baseline-r2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_baseline_r2.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-baseline-r2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Profile baseline test R² per community area. Pooled R² (0.933) is dominated by the highest-volume areas; the per-area distribution is much wider, with several areas negative.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-actual-vs-predicted" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-actual-vs-predicted-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_actual_vs_predicted.png" class="img-fluid figure-img" style="width:95.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-actual-vs-predicted-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: Actual vs.&nbsp;predicted demand, test set, all five community-area models (baseline, pooled LinearSVR, demand-weighted LinearSVR, tuned RBF, tuned polynomial), log1p scale.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-skill-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-skill-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_skill_map.png" class="img-fluid figure-img" style="width:70.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-skill-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;13: Per-area skill map, pooled LinearSVR, all 77 community areas.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-top-area" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-top-area-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_top_area_all_models.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-top-area-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;14: Actual vs.&nbsp;all-models predictions for Community Area 8 (top-3 by demand), one evaluation week. Models track the daily cycle here, unlike the census-tract case below.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-demand-tiers" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-demand-tiers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_demand_tiers.png" class="img-fluid figure-img" style="width:95.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-demand-tiers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15: Median demand per area, with the low/medium/high tiers (9.1) and the 10 trips/window per-area threshold (9.2) used to select the 20 highest-demand areas.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-per-area-rbf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-per-area-rbf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_per_area_rbf_tuning.png" class="img-fluid figure-img" style="width:80.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-per-area-rbf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16: Tuned per-area RBF SVR vs.&nbsp;its untuned default, skill vs.&nbsp;baseline. This is the only configuration in the study with positive demand-weighted skill, and only for the highest-demand areas among the 20.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-nn-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_nn_comparison.png" class="img-fluid figure-img" style="width:95.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;17: NN model comparison, community area, 4h: demand-weighted skill, weighted RMSE, and relative MAE for baseline, Shallow NN, and tuned Deep NN.
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca4h-nn-skill-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca4h-nn-skill-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca4h_nn_skill_map.png" class="img-fluid figure-img" style="width:70.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca4h-nn-skill-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;18: Tuned Deep NN per-area skill map, community area, 4h. O’Hare (upper left) is the one clearly red (negative-skill) area; nearly everywhere else is pale green (mildly positive).
+</figcaption>
+</figure>
+</div>
+<div id="fig-ca1h-nn-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ca1h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/ca1h_nn_comparison.png" class="img-fluid figure-img" style="width:95.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ca1h-nn-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;19: NN model comparison, community area, 1h: demand-weighted skill, weighted RMSE, and relative MAE for baseline, Shallow NN, and tuned Deep NN. Unlike the 4h version (<a href="#fig-ca4h-nn-comparison" class="quarto-xref">Figure&nbsp;17</a>), the tuned Deep NN is the only model here to beat the baseline.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="census-tract-resolution-1" class="level2">
+<h2 class="anchored" data-anchor-id="census-tract-resolution-1">Census Tract Resolution</h2>
+<div id="fig-tract-scope-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-scope-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_scope_map.png" class="img-fluid figure-img" style="width:70.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-scope-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;20: Scope map: the 179 of 878 census tracts with enough tract-precision data to support a tract-level model, across 11 community areas.
+</figcaption>
+</figure>
+</div>
+<div id="fig-tract-baseline-r2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-baseline-r2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_baseline_r2.png" class="img-fluid figure-img" style="width:90.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-baseline-r2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;21: Profile baseline test R² per census tract. Wider spread than the community-area version (<a href="#fig-ca4h-baseline-r2" class="quarto-xref">Figure&nbsp;11</a>), consistent with more units competing for the same total demand.
+</figcaption>
+</figure>
+</div>
+<div id="fig-tract-feature-importance-coefs" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-feature-importance-coefs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_feature_importance_coefs.png" class="img-fluid figure-img" style="width:95.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-feature-importance-coefs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;22: LinearSVR feature-coefficient magnitudes, census tract. GMM hotspot-distance coefficients (red) dominate every other continuous feature.
+</figcaption>
+</figure>
+</div>
+<div id="fig-tract-skill-vs-demand" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_skill_vs_demand.png" class="img-fluid figure-img" style="width:95.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-skill-vs-demand-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;23: Per-tract skill vs.&nbsp;median demand (log scale).
+</figcaption>
+</figure>
+</div>
+<div id="fig-tract-skill-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tract-skill-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assets/figures/prediction/tract_skill_map.png" class="img-fluid figure-img" style="width:70.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tract-skill-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;24: Per-tract skill map, pooled LinearSVR, all 179 in-scope tracts.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="pending" class="level2">
+<h2 class="anchored" data-anchor-id="pending">Pending</h2>
+<ul>
+<li><strong>Full model-comparison table</strong>: skill, weighted RMSE, pooled R²/MAE/RMSE per model, per resolution, both families (source data already available in <code>results/model_results_summary.csv</code>).</li>
+<li><strong>1-hour resolution SVR figures</strong>: the <code>03.02</code> notebook has no saved execution output (see the Predictive Analytics chapter’s Limitations), so no plot output exists yet to extract from.</li>
+<li><strong>Census-tract NN figures</strong>: pending <code>03.06</code> being finalized.</li>
+</ul>
 </section>
 </section>
 <section id="citations-and-references" class="level1">
 <h1>Citations and References</h1>
 <p>You can easily cite your sources using BibLaTeX. For example, you can cite the Quarto documentation <span class="citation" data-cites="quarto2024">(<a href="#ref-quarto2024" role="doc-biblioref">Team 2024</a>)</span> or a textbook like “R for Data Science” <span class="citation" data-cites="wickham2023">(<a href="#ref-wickham2023" role="doc-biblioref">Wickham et al. 2023</a>)</span>. The bibliography will be automatically generated at the end of the document.</p>
-</section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>The conclusion should summarize your findings and suggest future work.</p>
 
 </section>
 

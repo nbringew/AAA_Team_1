@@ -4,7 +4,46 @@ Figures below are grouped by resolution, in the same order as the Results sectio
 what is not already shown inline there. The most central figures for each resolution (feature
 importance, the skill-vs-demand relationship, and the flat-prediction evidence at tract level)
 appear directly in Results instead of here. NN figures at census-tract resolution are not yet
-included, since that notebook (`03.06`) is still being finalized.
+included, since that notebook (`03.05`) is still being finalized.
+
+## Cleaned Dataset: Column Reference
+
+Every column of `data/chicago_taxi_2024_2026_clean.parquet` (14,465,650 rows), with dtype,
+completeness, and distinct-value count as measured on that file, plus what the column means and
+any caveat carried over from the cleaning steps in @sec-data-preparation (e.g. census-tract
+masking, the two coordinate resolutions).
+
+| Column | Dtype | Non-Null % | Distinct | Description |
+|:---|:---|---:|---:|:---|
+| `trip_id` | str | 100.0% | 14,465,650 | Unique trip identifier (hash). Deduplicated in cleaning step 1. |
+| `taxi_id` | str | 100.0% | 3,354 | Anonymized vehicle identifier (hash). |
+| `trip_start_timestamp` | datetime64[us] | 100.0% | 84,660 | Local Chicago date/time the trip started. |
+| `trip_end_timestamp` | datetime64[us] | 100.0% | 84,664 | Local Chicago date/time the trip ended. |
+| `trip_seconds` | float32 | 100.0% | 9,722 | Trip duration in seconds (>= 60s, capped at the 99.9th percentile). |
+| `trip_miles` | float32 | 100.0% | 4,303 | Trip distance in miles (> 0, capped at the 99.9th percentile). |
+| `pickup_census_tract` | float32 | 44.6% | 149 | Pickup census tract (FIPS code). Missing for ~55% of trips -- privacy masking of low-volume tracts. |
+| `dropoff_census_tract` | float32 | 43.3% | 175 | Dropoff census tract (FIPS code). Same privacy masking as pickup. |
+| `pickup_community_area` | Int64 | 98.2% | 77 | One of 77 official community areas for the pickup. Missing means the pickup was outside city limits. |
+| `dropoff_community_area` | Int64 | 91.6% | 77 | Community area for the dropoff. Missing means the dropoff was outside city limits. |
+| `fare` | float32 | 100.0% | 9,078 | Metered fare in USD (>= \$3.25 flag-drop minimum). |
+| `tips` | float32 | 100.0% | 3,619 | Tip amount in USD. 0 is valid -- cash trips report no tip. |
+| `tolls` | float32 | 100.0% | 560 | Toll charges in USD. 0 is valid -- most trips use no toll roads. |
+| `extras` | float32 | 100.0% | 3,624 | Additional surcharges in USD. 0 is valid. |
+| `trip_total` | float32 | 100.0% | 14,616 | Total amount charged in USD (>= \$3.25). |
+| `payment_type` | category | 100.0% | 7 | Payment method (Credit Card, Cash, Mobile, Prcard, Unknown, ...). Left untouched by cleaning. |
+| `company` | str | 100.0% | 45 | Taxi affiliation / operating company. Left untouched by cleaning. |
+| `pickup_centroid_latitude` | float32 | 98.2% | 571 | Pickup latitude: census tract centroid where known, else community area centroid (mixed resolution). |
+| `pickup_centroid_longitude` | float32 | 98.2% | 565 | Pickup longitude, same mixed-resolution rule as latitude. |
+| `dropoff_centroid_latitude` | float32 | 92.1% | 684 | Dropoff latitude, same mixed-resolution rule. |
+| `dropoff_centroid_longitude` | float32 | 92.1% | 678 | Dropoff longitude, same mixed-resolution rule. |
+| `pickup_flag` | int64 | 100.0% | 2 | 1 if pickup_community_area is present, 0 if missing (outside Chicago). |
+| `dropoff_flag` | int64 | 100.0% | 2 | 1 if dropoff_community_area is present, 0 if missing (outside Chicago). |
+| `pickup_ca_centroid_lat` | float32 | 98.2% | 77 | Pickup community area centroid latitude -- always CA-level resolution (added in step 3). |
+| `pickup_ca_centroid_lon` | float32 | 98.2% | 77 | Pickup community area centroid longitude -- always CA-level resolution. |
+| `dropoff_ca_centroid_lat` | float32 | 91.6% | 77 | Dropoff community area centroid latitude -- always CA-level resolution. |
+| `dropoff_ca_centroid_lon` | float32 | 91.6% | 77 | Dropoff community area centroid longitude -- always CA-level resolution. |
+
+: Data dictionary, cleaned dataset. {#tbl-column-reference tbl-colwidths="[16,10,10,10,54]"}
 
 ## Community Area, 4-Hour Resolution
 
@@ -74,4 +113,4 @@ tracts.](assets/figures/prediction/tract_skill_map.png){#fig-tract-skill-map wid
   `results/model_results_summary.csv`).
 - **1-hour resolution SVR figures**: the `03.02` notebook has no saved execution output (see the
   Predictive Analytics chapter's Limitations), so no plot output exists yet to extract from.
-- **Census-tract NN figures**: pending `03.06` being finalized.
+- **Census-tract NN figures**: pending `03.05` being finalized.

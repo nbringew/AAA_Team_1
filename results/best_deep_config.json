@@ -7,6 +7,6 @@
   "hidden_dim1": 128,
   "hidden_dim2": 64,
   "selected_knob": "weight_decay=1e-4",
-  "source_notebook": "03.04_prediction_nn_CA_4h.ipynb",
+  "source_notebook": "03.03_prediction_nn_CA_4h.ipynb",
   "selected_at": "2026-07-21T20:31:42"
 }

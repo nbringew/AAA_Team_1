@@ -1,4 +1,4 @@
-# Data Preparation
+# Data Preparation {#sec-data-preparation}
 
 The raw taxi export contains 16,086,196 rows across 21 columns. The cleaning pipeline
 concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the
@@ -40,3 +40,5 @@ result out as a single Parquet file. In total, 10.1% of trips (1,620,534 rows) a
 and are handled per analysis.
 
 \noindent The cleaned dataset has 14,465,662 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.
+@tbl-column-reference in the appendix gives the full column-by-column reference: dtype,
+completeness, distinct-value count, and description for every column in the cleaned file.

@@ -255,7 +255,7 @@ highest-demand point) is the one clearly negative outlier; every other high-dema
 or above zero.](assets/figures/prediction/ca4h_nn_skill_vs_demand.png){#fig-ca4h-nn-skill-vs-demand width="90%"}
 
 An attempt was made to close that specific gap directly: a variant
-(`notebooks/03_predictive_analytics/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) added
+(`notebooks/03_predictive_analytics/misc/03_prediction_nn_CA_4h_airport_time_features.ipynb`) added
 explicit O'Hare-by-time-of-day interaction features (the O'Hare one-hot dummy multiplied by each
 hour-of-day harmonic), giving the network direct access to a distinct diurnal shape for O'Hare
 instead of requiring the hidden layer to discover one unaided. This made things worse, not better:
@@ -313,7 +313,7 @@ subsection's specific figures as unverified until a live run is captured.*
 demand-weighted skill anywhere in this study, and better than every SVR variant tried at this
 resolution (best SVR: tuned RBF at -0.331). The untuned Shallow NN stays negative here too (skill
 -0.048, weighted RMSE 42.28, pooled $R^2$ 0.903). Note that this is not a fresh architecture
-search at 1-hour resolution: `03.05` reuses the exact configuration `03.04` selected at 4-hour
+search at 1-hour resolution: `03.04` reuses the exact configuration `03.03` selected at 4-hour
 resolution (only the early-stopping epoch count is redetermined on the 1h data), so this result
 is evidence that the 4-hour search's selected configuration transfers well to 1-hour resolution,
 not that a separately-run tuning effort succeeded here where it failed at 4-hour resolution.
@@ -347,7 +347,7 @@ training data at this resolution, only a pooled `LinearSVR` is fit and reported;
 only a quick, untuned documentation-only snapshot on a subsample and is not tuned or carried
 forward as a candidate, following the same compute-cost reasoning established at community-area
 resolution, now at an
-even smaller per-unit scale. A tract-level NN pipeline (`03.06`) exists but is still being
+even smaller per-unit scale. A tract-level NN pipeline (`03.05`) exists but is still being
 finalized and is not reported in this chapter. A census-tract,
 1-hour combination was deliberately not attempted either: it would stack both axes that make
 pooling hard at once, 179 units instead of 77 and the four-fold finer time buckets that already
@@ -414,7 +414,7 @@ for the highest counts, a penalty the baseline never incurs since it predicts di
 raw scale.
 
 **NN.** The NN results add a resolution-dependent twist to the pooling story above: the
-architecture that `03.04`'s search selects at 4-hour resolution produces a large, clear win once
+architecture that `03.03`'s search selects at 4-hour resolution produces a large, clear win once
 reused at 1-hour resolution (Deep NN demand-weighted skill +0.062, the only positive NN result in the
 study), but is roughly a wash at the 4-hour resolution the search was actually run on (-0.027
 tuned vs. -0.028 untuned), despite a full architecture search and around 39 minutes of fit time.
@@ -496,7 +496,7 @@ pooled model's parameters, regardless of which model family that pooled model co
   performance is -0.027, essentially level with the untuned Shallow NN (-0.028) rather than the
   clear win the search-phase evaluation suggested -- the search is not currently a reliable guide
   to final, full-train performance, even though this same selected configuration, reused as-is at
-  1-hour resolution (`03.05` does not repeat the search), performs clearly well there; a config
+  1-hour resolution (`03.04` does not repeat the search), performs clearly well there; a config
   transferring well to another resolution is not yet strong evidence the search procedure that
   produced it is sound.
 - **NN pooling fails hardest on the single highest-demand area**: at community-area, 4-hour
@@ -507,13 +507,13 @@ pooled model's parameters, regardless of which model family that pooled model co
   other areas' commute-driven cycle -- exactly the kind of per-area interaction the NN's hidden
   layer is supposed to be able to learn, but evidently does not here. An attempt to close this gap
   directly by adding O'Hare-by-time-of-day interaction features
-  (`notebooks/03_predictive_analytics/misc/03.04_prediction_nn_CA_4h_airport_time_features.ipynb`) made the
+  (`notebooks/03_predictive_analytics/misc/03_prediction_nn_CA_4h_airport_time_features.ipynb`) made the
   overall demand-weighted skill worse (-0.186), not better, so that change was not adopted.
 - **NN tuning cost is not yet justified by its results**: the community-area, 4-hour architecture
   search took roughly 39 minutes of fit time and produced a configuration that essentially
   matches, rather than beats, the untuned Shallow NN (324s), and both still trail the
   near-instant profile baseline.
-- **NN results at census-tract resolution are not yet reported**: a tract-level pipeline (`03.06`)
+- **NN results at census-tract resolution are not yet reported**: a tract-level pipeline (`03.05`)
   exists and has produced results, but it is still being finalized and is excluded from this
   chapter until it is.
 

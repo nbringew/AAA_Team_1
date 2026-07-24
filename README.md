@@ -70,10 +70,9 @@ workflow:
    different spatial and temporal resolutions:
    - `03.01_prediction_svm_CA_4h.ipynb`
    - `03.02_prediction_svm_CA_1h.ipynb`
-   - `03.03_prediction_svm_tract.ipynb`
-   - `03.04_prediction_nn_CA_4h.ipynb`
-   - `03.05_prediction_nn_CA_1h.ipynb`
-   - `03.06_prediction_nn_tract.ipynb`
+   - `03.03_prediction_nn_CA_4h.ipynb`
+   - `03.04_prediction_nn_CA_1h.ipynb`
+   - `03.05_prediction_nn_tract.ipynb`
 
 4. **Reinforcement learning** — `notebooks/04_reinforcement_learning/`
    - `04_reinforcement_learning.ipynb`: Implements the smart-charging environment, trains DQN
