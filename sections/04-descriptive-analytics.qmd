@@ -69,9 +69,7 @@ total pickup demand. To avoid interpreting privacy-induced community-area centro
 locations, the model uses 2,787,934 tract-resolved pickups at 421 locations inside Chicago.
 Model comparison indicates an interpretable elbow at six components; a 100-meter covariance
 floor prevents artificial point masses below the approximately 600-meter empirical spatial
-resolution of the centroid data.
-
-{{< embed notebooks/02_descriptive_analytics/02.2_gmm.ipynb#fig-gmm-hotspots >}}
+resolution of the centroid data. The fitted mixture is shown in @fig-gmm-hotspots (appendix).
 
 The fitted surface confirms that demand is highly concentrated. The five largest components
 cover approximately 97% of tract-resolved pickups. Three components represent the extended

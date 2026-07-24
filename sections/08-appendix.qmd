@@ -1,10 +1,16 @@
 # Appendix: Detailed Tables and Figures {#sec-appendix}
 
-Figures below are grouped by resolution, in the same order as the Results section, and cover
-what is not already shown inline there. The most central figures for each resolution (feature
-importance, the skill-vs-demand relationship, and the flat-prediction evidence at tract level)
-appear directly in Results instead of here. NN figures at census-tract resolution are not yet
-included, since that notebook (`03.05`) is still being finalized.
+Tables and figures below are referenced from the main text and grouped by chapter, in the same
+order as they are cited. All Predictive Analytics figures and score tables -- the March-week
+model comparisons, the per-area skill maps, and the per-resolution score tables -- are collected
+here and pointed to from the Results and Validation Strategy sections.
+
+```{=latex}
+% Within the appendix, place every figure/table exactly where it appears in the
+% source so the many stacked floats stay in citation order instead of drifting.
+\floatplacement{figure}{H}
+\floatplacement{table}{H}
+```
 
 ## Cleaned Dataset: Column Reference
 
@@ -45,72 +51,138 @@ masking, the two coordinate resolutions).
 
 : Data dictionary, cleaned dataset. {#tbl-column-reference tbl-colwidths="[16,10,10,10,54]"}
 
-## Community Area, 4-Hour Resolution
+## Descriptive Analytics: Spatial Hot Spots
+
+{{< embed notebooks/02_descriptive_analytics/02.2_gmm.ipynb#fig-gmm-hotspots >}}
+
+## Predictive Analytics: Metric Definitions
+
+The two headline metrics used throughout the Predictive Analytics chapter are defined below. The
+per-unit **skill score** compares a model's mean absolute error to the profile baseline's for the
+same spatial unit $i$,
+
+$$\text{skill}_i = 1 - \frac{\text{MAE}_{\text{model},\,i}}{\text{MAE}_{\text{baseline},\,i}}$$ {#eq-skill}
+
+so that $0$ means tied with the baseline, $1$ means zero error, and a negative value means worse
+than the baseline. The reported **demand-weighted skill** aggregates the per-unit skills with
+weights equal to each unit's median demand $m_i$, so the highest-volume units dominate,
+
+$$\text{skill}_{\text{demand-weighted}} = \frac{\sum_i m_i \, \text{skill}_i}{\sum_i m_i}.$$ {#eq-demand-weighted-skill}
+
+The **weighted RMSE** is a pooled, absolute-scale error over every test-set row $j$ (a unit
+crossed with a time window), with $y_j$ and $\hat{y}_j$ the actual and predicted demand and
+$\bar{d}_{u(j)}$ the train-period mean demand of the unit that row $j$ belongs to,
+
+$$\text{weighted RMSE} = \sqrt{\frac{\sum_j \bar{d}_{u(j)} \left(y_j - \hat{y}_j\right)^2}{\sum_j \bar{d}_{u(j)}}}.$$ {#eq-weighted-rmse}
+
+## Predictive Analytics: Baseline
 
 ![Raw per-window demand is heavily right-skewed, which is why both SVR and NN regress on
 `log1p(count)` rather than raw counts.](assets/figures/prediction/ca4h_raw_demand.png){#fig-ca4h-raw-demand width="90%"}
 
-![Profile baseline test R² per community area. Pooled R² (0.933) is dominated by the
-highest-volume areas; the per-area distribution is much wider, with several areas
-negative.](assets/figures/prediction/ca4h_baseline_r2.png){#fig-ca4h-baseline-r2 width="90%"}
+![Profile baseline predictions vs. actual demand across an evaluation week, highest-demand
+community area (community area, 4-hour resolution). The baseline tracks the daily and weekly
+cycle closely.](assets/figures/prediction/ca4h_baseline_week.png){#fig-ca4h-baseline-week width="90%"}
 
-![Actual vs. predicted demand, test set, all five community-area models (baseline, pooled
-LinearSVR, demand-weighted LinearSVR, tuned RBF, tuned polynomial), log1p
-scale.](assets/figures/prediction/ca4h_actual_vs_predicted.png){#fig-ca4h-actual-vs-predicted width="95%"}
+![Profile baseline test $R^2$ per community area, 4-hour resolution. The pooled $R^2$ (0.933) is
+dominated by the highest-volume areas; the per-area distribution is much wider, with 21 of 77
+areas negative.](assets/figures/prediction/ca4h_baseline_r2.png){#fig-ca4h-baseline-r2 width="90%"}
 
-![Per-area skill map, pooled LinearSVR, all 77 community
-areas.](assets/figures/prediction/ca4h_skill_map.png){#fig-ca4h-skill-map width="70%"}
+| Resolution | Units | Pooled $R^2$ | Weighted RMSE | Median per-unit $R^2$ | Units with $R^2<0$ |
+|:---|---:|---:|---:|---:|---:|
+| Community area, 4-hour | 77 | 0.933 | 139.02 | 0.208 | 21 of 77 |
+| Community area, 1-hour | 77 | 0.918 | 39.46 | 0.028 | 36 of 77 |
+| Census tract, 4-hour | 179 | 0.896 | 100.99 | 0.195 | 56 of 179 |
 
-![Actual vs. all-models predictions for Community Area 8 (top-3 by demand), one evaluation
-week. Models track the daily cycle here, unlike the census-tract case
-below.](assets/figures/prediction/ca4h_top_area_all_models.png){#fig-ca4h-top-area width="90%"}
+: Profile baseline test scores by resolution. {#tbl-baseline-scores}
 
-![Median demand per area, with the low/medium/high tiers (9.1) and the 10 trips/window
-per-area threshold (9.2) used to select the 20 highest-demand
-areas.](assets/figures/prediction/ca4h_demand_tiers.png){#fig-ca4h-demand-tiers width="95%"}
+## Predictive Analytics: Community Area, 4-Hour Resolution
 
-![Tuned per-area RBF SVR vs. its untuned default, skill vs. baseline. This is the only
-configuration in the study with positive demand-weighted skill, and only for the
-highest-demand areas among the
-20.](assets/figures/prediction/ca4h_per_area_rbf_tuning.png){#fig-ca4h-per-area-rbf width="80%"}
+| Model | Units | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|---:|---:|
+| Profile baseline | 77 | 0.000 | 0.000 | 139.02 | 0.933 |
+| LinearSVR, pooled | 77 | -0.827 | -0.017 | 254.94 | 0.778 |
+| LinearSVR, demand-weighted | 77 | -0.675 | -0.052 | 231.91 | 0.814 |
+| LinearSVR, demand-tiered | 77 | -0.732 | 0.000 | 243.60 | 0.800 |
+| RBF, tuned (10k subsample) | 77 | -0.232 | -0.027 | 176.93 | 0.892 |
+| Polynomial, tuned (10k subsample) | 77 | -0.221 | -0.049 | 171.71 | 0.896 |
+| LinearSVR, per-area | 20 | -0.112 | -0.091 | 156.93 | 0.905 |
+| LinearSVR, per-area, tuned | 20 | -0.125 | -0.116 | 161.10 | 0.901 |
+| RBF, per-area | 20 | -0.135 | -0.105 | 163.37 | 0.897 |
+| **RBF, per-area, tuned** | 20 | **+0.012** | -0.002 | 143.80 | 0.921 |
 
-![NN model comparison, community area, 4h: demand-weighted skill, weighted RMSE, and relative
-MAE for baseline, Shallow NN, and tuned Deep
-NN.](assets/figures/prediction/ca4h_nn_comparison.png){#fig-ca4h-nn-comparison width="95%"}
+: SVR test scores, community area, 4-hour resolution. Per-area models cover only the 20 areas
+above the demand threshold. {#tbl-ca4h-svm tbl-colwidths="[34,8,16,13,15,14]"}
 
-![Tuned Deep NN per-area skill map, community area, 4h. O'Hare (upper left) is the one clearly
-red (negative-skill) area; nearly everywhere else is pale green
-(mildly positive).](assets/figures/prediction/ca4h_nn_skill_map.png){#fig-ca4h-nn-skill-map width="70%"}
+![Actual, baseline and SVR-variant demand across the March evaluation week, Community Area 8,
+community area 4-hour
+resolution.](assets/figures/prediction/ca4h_svm_march_week.png){#fig-ca4h-svm-march-week width="95%"}
 
-![NN model comparison, community area, 1h: demand-weighted skill, weighted RMSE, and relative
-MAE for baseline, Shallow NN, and tuned Deep NN. Unlike the 4h version
-(@fig-ca4h-nn-comparison), the tuned Deep NN is the only model here to beat the
-baseline.](assets/figures/prediction/ca1h_nn_comparison.png){#fig-ca1h-nn-comparison width="95%"}
+![Pooled `LinearSVR` per-area skill vs. the profile baseline, all 77 community areas, 4-hour
+resolution.](assets/figures/prediction/ca4h_svm_skill_map.png){#fig-ca4h-svm-skillmap width="55%"}
 
-## Census Tract Resolution
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ | Fit time |
+|:---|---:|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 139.02 | 0.933 | 1s |
+| Shallow NN (untuned) | -0.028 | +0.097 | 144.96 | 0.925 | 324s |
+| Deep NN (tuned) | -0.027 | +0.071 | 145.93 | 0.927 | 2,333s |
+
+: Neural network test scores, community area, 4-hour resolution. {#tbl-ca4h-nn}
+
+![Actual, baseline and neural-network demand across the March evaluation week, Community Area 8
+(highest demand), community area 4-hour
+resolution.](assets/figures/prediction/ca4h_nn_march_week.png){#fig-ca4h-nn-march-week width="95%"}
+
+![Tuned deep NN per-area skill vs. the profile baseline, all 77 community areas, 4-hour
+resolution. O'Hare (upper left) is the one clearly negative
+area.](assets/figures/prediction/ca4h_nn_skill_map.png){#fig-ca4h-nn-skillmap width="55%"}
+
+## Predictive Analytics: Community Area, 1-Hour Resolution
+
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 39.46 | 0.918 |
+| SVR -- LinearSVR, pooled | -1.016 | +0.022 | 76.96 | 0.687 |
+| SVR -- RBF, tuned | -0.331 | +0.015 | 54.53 | 0.835 |
+| SVR -- Polynomial, tuned | -0.361 | 0.000 | 56.14 | 0.793 |
+| NN -- Shallow (untuned) | -0.048 | +0.118 | 42.28 | 0.903 |
+| **NN -- Deep (tuned)** | **+0.062** | +0.090 | 36.26 | 0.928 |
+
+: Test scores for both families, community area, 1-hour resolution. {#tbl-ca1h}
+
+![SVR March-week demand, Community Area 8, 1-hour
+resolution.](assets/figures/prediction/ca1h_svm_march_week.png){#fig-ca1h-svm-march-week width="95%"}
+
+![Neural-network March-week demand, Community Area 8, 1-hour
+resolution.](assets/figures/prediction/ca1h_nn_march_week.png){#fig-ca1h-nn-march-week width="95%"}
+
+![Pooled `LinearSVR` per-area skill vs. the profile baseline, all 77 community areas, 1-hour
+resolution.](assets/figures/prediction/ca1h_svm_skill_map.png){#fig-ca1h-svm-skillmap width="55%"}
+
+![Tuned deep NN per-area skill vs. the profile baseline, all 77 community areas, 1-hour
+resolution.](assets/figures/prediction/ca1h_nn_skill_map.png){#fig-ca1h-nn-skillmap width="55%"}
+
+## Predictive Analytics: Census Tract, 4-Hour Resolution
 
 ![Scope map: the 179 of 878 census tracts with enough tract-precision data to support a
 tract-level model, across 11 community
 areas.](assets/figures/prediction/tract_scope_map.png){#fig-tract-scope-map width="70%"}
 
-![Profile baseline test R² per census tract. Wider spread than the community-area version
-(@fig-ca4h-baseline-r2), consistent with more units competing for the same total
-demand.](assets/figures/prediction/tract_baseline_r2.png){#fig-tract-baseline-r2 width="90%"}
+![Profile baseline test $R^2$ per census tract, 4-hour resolution. Wider spread than the
+community-area version (@fig-ca4h-baseline-r2), consistent with more units competing for the same
+total demand.](assets/figures/prediction/tract_baseline_r2.png){#fig-tract-baseline-r2 width="90%"}
 
-![LinearSVR feature-coefficient magnitudes, census tract. GMM hotspot-distance coefficients
-(red) dominate every other continuous
-feature.](assets/figures/prediction/tract_feature_importance_coefs.png){#fig-tract-feature-importance-coefs width="95%"}
+| Model | Dem.-weighted skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|
+| Profile baseline | 0.000 | 100.99 | 0.896 |
+| Shallow NN (untuned) | -0.098 | 113.77 | 0.868 |
+| Deep NN (reused 4h config) | -0.340 | 138.71 | 0.821 |
 
-![Per-tract skill vs. median demand (log scale).](assets/figures/prediction/tract_skill_vs_demand.png){#fig-tract-skill-vs-demand width="95%"}
+: Neural network test scores, census tract, 4-hour resolution (179 in-scope tracts). {#tbl-tract}
 
-![Per-tract skill map, pooled LinearSVR, all 179 in-scope
-tracts.](assets/figures/prediction/tract_skill_map.png){#fig-tract-skill-map width="70%"}
+![Actual, baseline and neural-network demand across the March evaluation week, top-demand census
+tract (17031760900), 4-hour resolution (estimated trips after inverse-retention
+scaling).](assets/figures/prediction/tract_nn_march_week.png){#fig-tract-nn-march-week width="95%"}
 
-## Pending
-
-- **Full model-comparison table**: skill, weighted RMSE, pooled R²/MAE/RMSE per model, per
-  resolution, both families (source data already available in
-  `results/model_results_summary.csv`).
-- **1-hour resolution SVR figures**: the `03.02` notebook has no saved execution output (see the
-  Predictive Analytics chapter's Limitations), so no plot output exists yet to extract from.
-- **Census-tract NN figures**: pending `03.05` being finalized.
+![Tuned deep NN per-tract skill vs. the profile baseline, 179 in-scope census tracts, 4-hour
+resolution.](assets/figures/prediction/tract_nn_skill_map.png){#fig-tract-nn-skillmap width="55%"}
