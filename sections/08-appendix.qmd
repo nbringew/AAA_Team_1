@@ -121,6 +121,14 @@ masking, the two coordinate resolutions).
 
 {{< pagebreak >}}
 
+{{< embed notebooks/02_descriptive_analytics/02.3_descriptive-analytics_spatial.ipynb#fig-pickup-h3-4h >}}
+
+{{< pagebreak >}}
+
+{{< embed notebooks/02_descriptive_analytics/02.3_descriptive-analytics_spatial.ipynb#fig-dropoff-h3-4h >}}
+
+{{< pagebreak >}}
+
 {{< embed notebooks/02_descriptive_analytics/02.4_gaussian-mixture-model.ipynb#fig-gmm-hotspots >}}
 
 | Rank | Operational hot spot | Demand share | Tract-resolved pickups/day | Spatial extent ($\sigma$ major/minor) |
