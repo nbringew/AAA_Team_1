@@ -24,3 +24,11 @@ All analytical decisions, model design choices, interpretation of results, and c
 presented in this report reflect the judgment of the team members. Generative AI outputs were
 reviewed, verified, and edited by the team before inclusion in the project; the team takes full
 responsibility for the accuracy and integrity of the final content.
+
+## Team Sign-off
+
+| Name | Role/Contribution | Date |
+|:---|:---|:---|
+|  |  |  |
+|  |  |  |
+|  |  |  |
