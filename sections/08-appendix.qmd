@@ -3,7 +3,9 @@
 Tables and figures below are referenced from the main text and grouped by chapter, in the same
 order as they are cited. All Predictive Analytics figures and score tables -- the March-week
 model comparisons, the per-area skill maps, and the per-resolution score tables -- are collected
-here and pointed to from the Results and Validation Strategy sections.
+here and pointed to from the Results and Validation Strategy sections. The Reinforcement
+Learning environment assumptions, action-grid and EPEX comparisons, and policy-behavior figures
+are collected the same way and pointed to from the Problem Setup and Results sections.
 
 ```{=latex}
 % Within the appendix, place every figure/table exactly where it appears in the
@@ -248,3 +250,61 @@ scaling).](assets/figures/prediction/tract_nn_march_week.png){#fig-tract-nn-marc
 
 ![Tuned deep NN per-tract skill vs. the profile baseline, 179 in-scope census tracts, 4-hour
 resolution.](assets/figures/prediction/tract_nn_skill_map.png){#fig-tract-nn-skillmap width="55%"}
+
+## Reinforcement Learning: Environment Assumptions
+
+| Quantity | Value | Meaning |
+|---|---|---|
+| Battery capacity $C$ | \{40, 60, 77\} kWh | uniform per episode -- compact, mid-size, and large vehicle classes |
+| Initial SOC | $\mathcal{U}(20\%,\,60\%)$ of $C$ | varies daily with shift length and route profile |
+| Charging window | 8 $\times$ 15 min | 14:00-16:00 |
+| Charging powers | \{0, 5, 11, 22\} kW | zero / low / medium / high (later refined, see Markov Decision Process) |
+| Energy demand $d$ | $\mathcal{N}(30, 5^2)$ kWh, clipped at $C$ | trip demand depends on the route, not on vehicle size -- revealed only at departure |
+| Penalty | 100 €/kWh shortage | shortfall penalty |
+
+: Environment assumptions for the charging task {#tbl-assumptions}
+
+## Reinforcement Learning: Results
+
+![Action distribution on the original 4-action grid, 1,000 episodes (price-unaware DQN
+retrained with the notebook's original hyperparameters and seed for this comparison). Greedy
+spreads its decisions across all four power levels, while the DQN collapses onto 11 kW in 97%
+of them -- the degenerate habit that the refined grid in @tbl-stylized-grid
+corrects.](assets/figures/reinforcement/coarse_grid_action_distribution.png){#fig-coarse-grid-actions width="70%"}
+
+| Grid | Policy | Success rate | Mean reward |
+|---|---|---|---|
+| Original (4 actions) | Greedy | 98.9% | -2.581 |
+| Original (4 actions) | Price-unaware DQN | 95.5% | -17.201 |
+| Refined (7 actions) | Greedy | 98.9% | -2.058 |
+| Refined (7 actions) | Price-unaware DQN | 98.3% | -1.855 |
+
+: Effect of action-grid resolution in the stylized environment, 1,000 episodes {#tbl-stylized-grid}
+
+| Policy | Success rate | Mean cost (€/day) | Mean reward |
+|---|---|---|---|
+| Greedy | 98.9% | 1.7223 | -3.7775 |
+| Price-unaware DQN (stylized-trained) | 98.3% | 2.0424 | -3.8872 |
+| EPEX DQN | 75.2% | 0.9931 | -88.0377 |
+| Oracle (40 episodes) | 100% | 0.87 | -- |
+
+: Policy comparison under EPEX prices, refined action grid {#tbl-epex-results}
+
+![Charging-cost distribution, mean SOC trajectory, and action mix under EPEX prices, refined
+grid, 1,000 paired episodes. The EPEX DQN's cost mass sits near zero and its SOC trajectory
+runs lowest of the three policies, consistent with its lower success rate in
+@tbl-epex-results; the price-unaware DQN concentrates on 8 kW and 16 kW, while the EPEX DQN
+uses more of the grid, including
+0 kW.](assets/figures/reinforcement/epex_cost_comparison.png){#fig-epex-comparison width="100%"}
+
+![Left: paired charging cost, EPEX DQN vs. greedy, on the 752 episodes both cover -- points
+below the parity line are episodes where the EPEX DQN is cheaper. Right: the EPEX DQN's saving
+over greedy grows with the day-ahead price spread within the charging window, indicating that
+the advantage comes from price timing rather than a fixed
+offset.](assets/figures/reinforcement/cost_volatility.png){#fig-cost-volatility width="100%"}
+
+![Learned charging policies as a function of state, refined grid. Left: the price-unaware DQN's
+chosen power falls as SOC rises and as fewer steps remain, independent of price. Right: the
+EPEX DQN's chosen power falls as price rises above the median (dotted line) and shifts up as SOC
+drops from 45 to 15 kWh, so urgency dominates price once charge is
+low.](assets/figures/reinforcement/policy_maps.png){#fig-policy-maps width="100%"}
