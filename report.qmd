@@ -21,11 +21,7 @@ date: 2026-07-26 # Date of submission
 
 {{< pagebreak >}}
 
-{{< include sections/00-ai-declaration.qmd >}}
-
-{{< pagebreak >}}
-
-{{< include sections/00-abstract.qmd >}}
+{{< include sections/00-abstract_and_declaration.qmd >}}
 
 {{< pagebreak >}}
 

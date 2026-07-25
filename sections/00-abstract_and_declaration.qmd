@@ -1,3 +1,24 @@
 # Abstract {.unnumbered .unlisted}
 
 This project develops operational planning tools for an electric taxi fleet in Chicago, using 14.47 million cleaned taxi trips from 2024–2026 as a proxy for urban ride-hailing demand. Descriptive spatial analysis shows demand is highly concentrated -- more than 70% of assigned pickups originate in just four community areas -- with stable downtown and airport hot spots and pronounced daily and weekly cycles. To forecast pickups per spatial unit and time window, we train Support Vector Regression and Feedforward Neural Networks at community-area and census-tract resolution, benchmarking each against a per-unit historical profile baseline. That baseline proves difficult to beat: most pooled models score negative demand-weighted skill, the neural network is the only pooled model to surpass it (and only at one-hour resolution), and errors concentrate at O'Hare, whose round-the-clock pattern departs from the citywide commute cycle. A separate reinforcement-learning agent optimises home charging under day-ahead electricity prices; it lowers cost substantially but drops the charging success rate to 75%, so a price-blind greedy policy remains the safer choice. We recommend a transparent baseline citywide, targeted models reserved for atypical high-demand hubs, and price-aware charging only within hard reliability constraints.
+
+{{< pagebreak >}}
+
+# Declaration on the Use of Generative AI {.unnumbered .unlisted}
+
+In accordance with the course's requirements on the disclosure of generative AI use, we declare
+that generative AI tools were used during the preparation of this project, in the following
+areas:
+
+- **Coding**: Assisting with writing, debugging, and refactoring code in the analysis notebooks
+  (data collection, descriptive analytics, predictive analytics, and reinforcement learning) and
+  supporting scripts.
+- **Writing**: Drafting sections of this report and supporting documentation, including
+  explanatory text and descriptions of methods and results.
+- **Rewriting/editing**: Revising, restructuring, and improving the clarity, grammar, and
+  conciseness of previously written text and code produced by the team.
+
+All analytical decisions, model design choices, interpretation of results, and conclusions
+presented in this report reflect the judgment of the team members. Generative AI outputs were
+reviewed, verified, and edited by the team before inclusion; the team takes full responsibility
+for the accuracy and integrity of the final content.
