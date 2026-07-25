@@ -1,77 +1,38 @@
 # Conclusion
 
-## Key Findings for Fleet Operations
+The analysis indicates that a potential electric-taxi operator should begin with a conservative,
+zone-based planning system rather than rely immediately on complex prediction and control
+models. Observed taxi demand is strongly concentrated: more than 70% of spatially assigned
+pickups originate in Near North Side, O'Hare, the Loop, and Near West Side, and demand peaks on
+weekdays in the late afternoon. The Gaussian Mixture Model confirms three broader operational
+hot spots—the extended city center, O'Hare, and Midway—whose relative importance changes over
+the day. These patterns support staging vehicles near central business and transport zones and
+rebalancing them toward airports during evening and overnight periods.
 
-The analysis shows that the greatest immediate value for a potential fleet operator lies in
-combining robust demand patterns with transparent operational rules rather than relying on a
-single complex model. Taxi demand is strongly concentrated in both space and time: more than
-70% of spatially assigned pickups originate in Near North Side, O'Hare, the Loop, and Near West
-Side, while demand peaks on weekdays and in the late afternoon. These patterns support a
-zone-based operating strategy in which vehicles are staged primarily in the central business
-district and at major transport hubs, with time-dependent rebalancing toward airports and
-entertainment areas later in the day. The results should, however, be interpreted as observed
-taxi demand rather than total latent mobility demand.
+For forecasting, complexity did not consistently improve operational performance. The
+historical profile baseline remained difficult to outperform, and most pooled SVR and
+neural-network variants achieved negative demand-weighted skill. Only selected configurations,
+including the deep one-hour neural network and dedicated RBF models for high-demand areas,
+produced small improvements. A practical architecture should therefore retain the transparent
+profile baseline for most areas and reserve specialized models for a limited number of
+high-volume zones where forecast improvements have the greatest allocation value.
 
-## Demand Forecasting Strategy
+The charging experiment leads to a similar recommendation. The price-blind greedy policy
+achieved 98.9% reliability and outperformed both DQN agents after shortage penalties were
+included. Although the price-aware DQN reduced electricity costs, its 75.9% reliability is
+insufficient for fleet operations. Price-aware optimization should therefore operate only
+within hard minimum-SOC and departure-energy constraints. For vehicles returning regularly to
+a depot, private charging offers the greatest control over availability and dynamic tariffs;
+public fast charging remains useful as backup. The present data do not determine the optimal
+number or location of chargers because depot locations, grid limits, charger occupancy, and
+infrastructure costs are unavailable.
 
-For demand forecasting, model complexity did not consistently translate into operationally
-better predictions. The historical profile baseline remained difficult to outperform,
-particularly in high-volume areas. Most pooled SVR and neural-network specifications produced
-negative demand-weighted skill, although the deep neural network achieved a small positive
-skill at one-hour resolution and dedicated RBF models for the 20 highest-demand community areas
-also slightly improved on the baseline. This suggests a hybrid forecasting architecture: use
-simple profile forecasts for the long tail of low-volume areas and train dedicated models only
-for the small number of strategically important high-demand zones. Such an approach is easier
-to maintain, more interpretable, and better aligned with the concentration of fleet-allocation
-value than one city-wide pooled model.
-
-## Charging Strategy and Reinforcement Learning
-
-The charging experiment leads to a similar conclusion. The price-blind greedy policy reached a
-98.9% success rate and clearly outperformed both DQN agents once shortage penalties were
-included. The price-aware DQN demonstrated that dynamic electricity prices can reduce charging
-costs when sufficient energy is available, but its 75.9% reliability is not acceptable for
-fleet operations. Reinforcement learning should therefore not yet control charging without a
-safety mechanism. A practical system could use price-aware scheduling within hard minimum-SOC
-and departure-energy constraints, preserving the cost benefit of flexible charging without
-putting the next shift at risk.
-
-## Private versus Public Charging Infrastructure
-
-For a fleet with regular depot returns, private charging infrastructure is the preferable
-long-term option. It provides predictable availability, operational control, and access to
-dynamic electricity tariffs, while public chargers introduce travel time, queues, uncertain
-availability, and generally less control over prices. Public charging nevertheless remains
-useful as a backup and for vehicles that cannot reliably return to a depot. The recommended
-strategy is therefore a mixed system: install private chargers at one or more fleet bases near
-the main operating corridors and use public fast charging for contingencies and peak demand.
-The present analysis supports this operational direction, but it does not by itself justify a
-specific number, capacity, or location of chargers because infrastructure costs, grid-connection
-limits, depot locations, public-charger availability, and complete vehicle duty cycles are not
-included in the dataset.
-
-## Further Analysis and External Data
-
-Several extensions would strengthen the business case. The existing trip data could be used to
-construct full vehicle duty cycles and valid idle-time distributions, estimate repositioning
-distances, test rolling-origin forecasts, and evaluate prediction performance under a common
-scope and baseline. Charging simulations should cover complete operating days, alternative
-energy-demand scenarios, charging losses, battery degradation, charger congestion, and a
-fixed-power or flat-rate benchmark. Particularly useful external sources would include public
-charger locations, power levels, prices and occupancy; depot and electricity-grid data;
-real-time traffic and road-network travel times; flight and public-transport schedules; major
-events; and more complete weather forecasts. These additions would permit a joint location and
-capacity analysis comparing the total cost of private infrastructure with public-charging fees,
-detours, waiting time, and lost service revenue.
-
-## Advantages, Limitations, and Business Recommendation
-
-Overall, the project provides a useful proof of concept rather than a deployment-ready
-optimization system. Its main advantages are the large trip dataset, the combination of
-spatial, predictive, and charging analyses, and the use of operationally meaningful benchmarks.
-Its main limitations are spatial privacy aggregation, incomplete and partly inconsistent model
-comparisons, the absence of valid idle-time estimates, and simplified charging assumptions.
-Accordingly, the fleet operator should initially deploy a conservative, interpretable planning
-system based on demand profiles, hotspot-specific forecasts, and rule-based charging, while
-collecting the operational and infrastructure data required for a later, safely constrained
-optimization solution.
+Overall, the project provides a proof of concept rather than a deployment-ready system. Its
+main strengths are the large trip dataset, explicit spatial and temporal resolution analysis,
+operational baselines, and the connection between demand, forecasting, and charging decisions.
+Important limitations are anonymized centroid locations, incomplete Census Tract coverage, a
+threshold-dependent idle-time proxy, inconsistent scopes across some prediction experiments,
+and simplified charging assumptions. The recommended next step is an interpretable system
+combining demand profiles, hot-spot-specific forecasts, rule-based safe charging, and continuous
+data collection. More advanced optimization should follow only after acquiring complete vehicle
+duty cycles, depot and public-charger data, traffic conditions, and infrastructure costs.
