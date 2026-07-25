@@ -53,7 +53,8 @@ be modeled separately, and fleet positioning should change over the day.
 The three spatial resolutions provide complementary views. Community Areas are complete,
 recognizable operating zones but hide local variation. Census Tracts offer finer detail, although
 the existing analysis retains only the 6,245,422 trips (43.17%) for which both tract identifiers
-are available. H3 resolution 7 provides a uniform grid, but it cannot recover street-level
+are available. The four-hour pickup maps illustrate the resulting difference in spatial detail
+(@fig-pickup-ca-4h; @fig-pickup-tract-4h). H3 resolution 7 provides a uniform grid, but it cannot recover street-level
 precision because the anonymized data contain only 573 distinct pickup and 687 drop-off
 coordinate pairs. Only one H3 size is tested; resolution variation is primarily examined through
 Community Areas, Census Tracts, H3, and the one-, two-, three-, four-hour, and daily temporal
@@ -77,8 +78,3 @@ The hot-spot locations remain stable over the day, but their importance changes.
 share is approximately 80% during 07:00--19:00 and 61% at night; O'Hare rises from 18% to 36%.
 This supports rebalancing between a stable set of downtown and airport zones rather than uniform
 city-wide coverage.
-
-Overall, the notebooks answer the descriptive task across time, trip characteristics, prices,
-idle-time proxies, origins, destinations, spatial resolutions, and GMM hot spots. The principal
-limitations are centroid anonymization, incomplete Census Tract coverage, one fixed H3 size, and
-the threshold-dependent idle-time definition.

@@ -1,5 +1,3 @@
-\newpage
-
 # Appendix: Detailed Tables and Figures {#sec-appendix}
 
 Tables and figures below are referenced from the main text and grouped by chapter, in the same
@@ -114,6 +112,14 @@ masking, the two coordinate resolutions).
 
 : Dominant Community Area by four-hour block. Pickups use start time and drop-offs use end time.
 {#tbl-spatial-time}
+
+{{< embed notebooks/02_descriptive_analytics/02.3_descriptive-analytics_spatial.ipynb#fig-pickup-ca-4h >}}
+
+{{< pagebreak >}}
+
+{{< embed notebooks/02_descriptive_analytics/02.3_descriptive-analytics_spatial.ipynb#fig-pickup-tract-4h >}}
+
+{{< pagebreak >}}
 
 {{< embed notebooks/02_descriptive_analytics/02.4_gaussian-mixture-model.ipynb#fig-gmm-hotspots >}}
 
