@@ -32,7 +32,7 @@ result out as a single Parquet file. In total, 10.1% of trips (1,620,534 rows) a
 
 5. **Outlier and plausibility filtering.** Negative `tips`/`tolls`/`extras` would be removed,
    though none occur in practice — zero is legitimate, for example for cash trips that report
-   no tip. Trips below Chicago's legal minimum fare (\$3.25 flag-drop) or shorter than
+   no tip. Trips below Chicago's legal minimum fare (\$3.25 flag-drop) [@chicagobacp2026placard] or shorter than
    60 seconds are treated as test or aborted entries and removed, together with trips above the
    99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account
    for the bulk of all removed rows (1,585,072 of 1,620,534).
