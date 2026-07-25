@@ -1,3 +1,5 @@
+\newpage
+
 # Appendix: Detailed Tables and Figures {#sec-appendix}
 
 Tables and figures below are referenced from the main text and grouped by chapter, in the same

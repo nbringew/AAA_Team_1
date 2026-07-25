@@ -1,3 +1,4 @@
+
 # Data Preparation {#sec-data-preparation}
 
 The raw taxi export contains 16,086,196 rows across 21 columns. The cleaning pipeline

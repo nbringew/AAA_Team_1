@@ -17,14 +17,14 @@ produced small improvements. A practical architecture should therefore retain th
 profile baseline for most areas and reserve specialized models for a limited number of
 high-volume zones where forecast improvements have the greatest allocation value.
 
-The charging experiment leads to a similar recommendation. The price-blind greedy policy
-achieved 98.9% reliability and outperformed both DQN agents after shortage penalties were
-included. Although the price-aware DQN reduced electricity costs, its 75.9% reliability is
-insufficient for fleet operations. Price-aware optimization should therefore operate only
-within hard minimum-SOC and departure-energy constraints. For vehicles returning regularly to
-a depot, private charging offers the greatest control over availability and dynamic tariffs;
-public fast charging remains useful as backup. The present data do not determine the optimal
-number or location of chargers because depot locations, grid limits, charger occupancy, and
+The charging experiment leads to a similar recommendation. Under EPEX pricing, the price-blind
+greedy policy achieved a 98.9% success rate and outperformed both DQN agents in mean reward
+after shortage penalties were included. Although the price-aware DQN reduced electricity
+costs, its 75.2% success rate is insufficient for fleet operations. Price-aware optimization
+should therefore operate only within hard minimum-SOC and departure-energy constraints. For
+vehicles returning regularly to a depot, private charging offers the greatest control over
+availability and dynamic tariffs; public fast charging remains useful as backup. The present
+data do not determine the optimal number or location of chargers because depot locations, grid limits, charger occupancy, and
 infrastructure costs are unavailable.
 
 Overall, the project provides a proof of concept rather than a deployment-ready system. Its
@@ -34,5 +34,8 @@ Important limitations are anonymized centroid locations, incomplete Census Tract
 threshold-dependent idle-time proxy, inconsistent scopes across some prediction experiments,
 and simplified charging assumptions. The recommended next step is an interpretable system
 combining demand profiles, hot-spot-specific forecasts, rule-based safe charging, and continuous
-data collection. More advanced optimization should follow only after acquiring complete vehicle
-duty cycles, depot and public-charger data, traffic conditions, and infrastructure costs.
+data collection. Further analysis of the existing trip data should examine seasonal robustness,
+origin--destination flows for vehicle rebalancing, and the sensitivity of idle-time and hot-spot
+results to alternative temporal and spatial resolutions. More advanced optimization should
+follow only after acquiring complete vehicle duty cycles, depot and public-charger data, traffic
+conditions, and infrastructure costs.

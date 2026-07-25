@@ -26,7 +26,7 @@ temperature, apparent temperature, precipitation, snowfall, wind speed, cloud co
 weather conditions. Weather is joined to the demand data by timestamp and provides exogenous
 features that can also be known for future prediction periods.
 
-## Spatial Reference Data
+## Spatial Reference Data 
 
 Official boundary files provide polygons for Chicago's 77 community areas, 878 census tracts,
 and the city boundary. They support mapping, spatial joins, and demand aggregation at different
@@ -47,8 +47,7 @@ section.
 
 ## Granularity and Limitations
 
-The cleaned taxi data
-contain 14,465,662 rows and 27 columns. For spatial analytics and predictions, taxi trip observations are aggregated from individual trips into spatio-temporal demand panels,
+The cleaned taxi data contain 14,465,662 rows and 27 columns. For spatial analytics and predictions, taxi trip observations are aggregated from individual trips into spatio-temporal demand panels,
 using community areas or census tracts and hourly or four-hour windows. Key limitations are privacy-related location masking,
 the reporting lag in recent portal data, mixed spatial precision, and the use of licensed taxi
 trips as a proxy for wider ride-hailing demand.

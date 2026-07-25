@@ -6,6 +6,10 @@
 % the appendix to keep its many figures/tables in source order.
 \usepackage{float}
 
+% Start the list of figures on a new page after the table of contents.
+\usepackage{etoolbox}
+\pretocmd{\listoffigures}{\clearpage}{}{}
+
 % Section titles formatting
 \usepackage{titlesec}
 \titleformat{\section}
@@ -19,7 +23,7 @@
     {\thesubsection}{1em}{}
 \titlespacing*{\subsection}
     {0pt}{10pt}{0pt}
-
+    
 \titleformat{\subsubsection}
     {\normalfont\bfseries\fontsize{12}{20}\selectfont}
     {\thesubsubsection}{1em}{}
