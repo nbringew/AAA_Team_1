@@ -1,77 +1,250 @@
 # Appendix: Detailed Tables and Figures {#sec-appendix}
 
-Figures below are grouped by resolution, in the same order as the Results section, and cover
-what is not already shown inline there. The most central figures for each resolution (feature
-importance, the skill-vs-demand relationship, and the flat-prediction evidence at tract level)
-appear directly in Results instead of here. NN figures at census-tract resolution are not yet
-included, since that notebook (`03.06`) is still being finalized.
+Tables and figures below are referenced from the main text and grouped by chapter, in the same
+order as they are cited. All Predictive Analytics figures and score tables -- the March-week
+model comparisons, the per-area skill maps, and the per-resolution score tables -- are collected
+here and pointed to from the Results and Validation Strategy sections.
 
-## Community Area, 4-Hour Resolution
+```{=latex}
+% Within the appendix, place every figure/table exactly where it appears in the
+% source so the many stacked floats stay in citation order instead of drifting.
+\floatplacement{figure}{H}
+\floatplacement{table}{H}
+```
+
+## Cleaned Dataset: Column Reference
+
+Every column of `data/chicago_taxi_2024_2026_clean.parquet` (14,465,662 rows), with dtype,
+completeness, and distinct-value count as measured on that file, plus what the column means and
+any caveat carried over from the cleaning steps in @sec-data-preparation (e.g. census-tract
+masking, the two coordinate resolutions).
+
+| Column | Dtype | Non-Null % | Distinct | Description |
+|:---|:---|---:|---:|:---|
+| `trip_id` | str | 100.0% | 14,465,662 | Unique trip identifier (hash). Deduplicated in cleaning step 1. |
+| `taxi_id` | str | 100.0% | 3,354 | Anonymized vehicle identifier (hash). |
+| `trip_start_timestamp` | datetime64[us] | 100.0% | 84,660 | Local Chicago date/time the trip started. |
+| `trip_end_timestamp` | datetime64[us] | 100.0% | 84,664 | Local Chicago date/time the trip ended. |
+| `trip_seconds` | float32 | 100.0% | 9,722 | Trip duration in seconds (>= 60s, capped at the 99.9th percentile). |
+| `trip_miles` | float32 | 100.0% | 4,303 | Trip distance in miles (> 0, capped at the 99.9th percentile). |
+| `pickup_census_tract` | float32 | 44.6% | 149 | Pickup census tract (FIPS code). Missing for ~55% of trips -- privacy masking of low-volume tracts. |
+| `dropoff_census_tract` | float32 | 43.3% | 175 | Dropoff census tract (FIPS code). Same privacy masking as pickup. |
+| `pickup_community_area` | Int64 | 98.2% | 77 | One of 77 official community areas for the pickup. Missing means the pickup was outside city limits. |
+| `dropoff_community_area` | Int64 | 91.6% | 77 | Community area for the dropoff. Missing means the dropoff was outside city limits. |
+| `fare` | float32 | 100.0% | 9,078 | Metered fare in USD (>= \$3.25 flag-drop minimum). |
+| `tips` | float32 | 100.0% | 3,619 | Tip amount in USD. 0 is valid -- cash trips report no tip. |
+| `tolls` | float32 | 100.0% | 560 | Toll charges in USD. 0 is valid -- most trips use no toll roads. |
+| `extras` | float32 | 100.0% | 3,624 | Additional surcharges in USD. 0 is valid. |
+| `trip_total` | float32 | 100.0% | 14,616 | Total amount charged in USD (>= \$3.25). |
+| `payment_type` | category | 100.0% | 7 | Payment method (Credit Card, Cash, Mobile, Prcard, Unknown, ...). Left untouched by cleaning. |
+| `company` | str | 100.0% | 45 | Taxi affiliation / operating company. Left untouched by cleaning. |
+| `pickup_centroid_latitude` | float32 | 98.2% | 571 | Pickup latitude: census tract centroid where known, else community area centroid (mixed resolution). |
+| `pickup_centroid_longitude` | float32 | 98.2% | 565 | Pickup longitude, same mixed-resolution rule as latitude. |
+| `dropoff_centroid_latitude` | float32 | 92.1% | 684 | Dropoff latitude, same mixed-resolution rule. |
+| `dropoff_centroid_longitude` | float32 | 92.1% | 678 | Dropoff longitude, same mixed-resolution rule. |
+| `pickup_flag` | int64 | 100.0% | 2 | 1 if pickup_community_area is present, 0 if missing (outside Chicago). |
+| `dropoff_flag` | int64 | 100.0% | 2 | 1 if dropoff_community_area is present, 0 if missing (outside Chicago). |
+| `pickup_ca_centroid_lat` | float32 | 98.2% | 77 | Pickup community area centroid latitude -- always CA-level resolution (added in step 3). |
+| `pickup_ca_centroid_lon` | float32 | 98.2% | 77 | Pickup community area centroid longitude -- always CA-level resolution. |
+| `dropoff_ca_centroid_lat` | float32 | 91.6% | 77 | Dropoff community area centroid latitude -- always CA-level resolution. |
+| `dropoff_ca_centroid_lon` | float32 | 91.6% | 77 | Dropoff community area centroid longitude -- always CA-level resolution. |
+
+: Data dictionary, cleaned dataset. {#tbl-column-reference tbl-colwidths="[16,10,10,10,54]"}
+
+## Descriptive Analytics: Tables and Spatial Hot Spots
+
+| Day | Average pickups per observed day |
+|:---|---:|
+| Monday | 16,382.15 |
+| Tuesday | 17,681.13 |
+| Wednesday | 18,358.35 |
+| Thursday | 18,856.44 |
+| Friday | 17,623.75 |
+| Saturday | 13,313.98 |
+| Sunday | 12,591.04 |
+
+: Average pickup demand by weekday. {#tbl-weekday-demand}
+
+| Measure | Median | Mean |
+|:---|---:|---:|
+| Trip distance | 3.85 miles | 7.09 miles |
+| Trip duration | 16.00 minutes | 20.97 minutes |
+| Metered fare | USD 15.25 | USD 22.06 |
+| Total charge | USD 17.75 | USD 27.01 |
+
+: Distribution of trip characteristics. {#tbl-trip-characteristics}
+
+| Maximum retained gap | Transitions retained | Share of non-negative gaps | Mean proxy | Median proxy |
+|:---|---:|---:|---:|---:|
+| 1 hour | 9,366,946 | 65.77% | 21.20 min | 15.00 min |
+| 2 hours | 10,986,502 | 77.14% | 31.88 min | 15.00 min |
+| **4 hours** | **12,072,245** | **84.76%** | **44.49 min** | **30.00 min** |
+| 6 hours | 12,297,062 | 86.34% | 49.09 min | 30.00 min |
+| 8 hours | 12,395,975 | 87.03% | 52.08 min | 30.00 min |
+
+: Sensitivity of the consecutive-trip idle-time proxy. {#tbl-idle-sensitivity}
+
+{{< embed notebooks/02_descriptive_analytics/02.1_descriptive-analytics_taxis.ipynb#fig-idle-time-proxy >}}
+
+| Pickup area | Pickup trips | Drop-off area | Drop-off trips |
+|:---|---:|:---|---:|
+| Near North Side | 3,264,625 | Near North Side | 3,528,594 |
+| O'Hare | 2,985,521 | Loop | 2,452,298 |
+| Loop | 2,374,677 | Near West Side | 1,450,354 |
+| Near West Side | 1,467,354 | Lake View | 648,761 |
+
+: Highest-volume Community Areas for pickups and drop-offs. {#tbl-community-demand}
+
+| Time block | Leading pickup area | Pickup trips | Leading drop-off area | Drop-off trips |
+|:---|:---|---:|:---|---:|
+| 00:00--04:00 | O'Hare | 168,417 | Near North Side | 107,260 |
+| 04:00--08:00 | Near North Side | 210,845 | Loop | 180,906 |
+| 08:00--12:00 | Near North Side | 731,045 | Near North Side | 763,901 |
+| 12:00--16:00 | Near North Side | 894,316 | Near North Side | 945,428 |
+| 16:00--20:00 | Near North Side | 926,865 | Near North Side | 1,031,329 |
+| 20:00--24:00 | O'Hare | 703,740 | Near North Side | 529,528 |
+
+: Dominant Community Area by four-hour block. Pickups use start time and drop-offs use end time.
+{#tbl-spatial-time}
+
+{{< embed notebooks/02_descriptive_analytics/02.4_gaussian-mixture-model.ipynb#fig-gmm-hotspots >}}
+
+| Rank | Operational hot spot | Demand share | Tract-resolved pickups/day | Spatial extent ($\sigma$ major/minor) |
+|---:|:---|---:|---:|:---|
+| 1 | Extended city center (center in Loop) | 76.3% | 5,830 | 1,746 m / 878 m |
+| 2 | O'Hare | 21.0% | 1,607 | 123 m / 100 m |
+| 3 | Midway/Garfield Ridge | 2.6% | 201 | 101 m / 100 m |
+
+: Final three-component GMM hot spots. {#tbl-gmm-hotspots-summary}
+
+## Predictive Analytics: Metric Definitions
+
+The two headline metrics used throughout the Predictive Analytics chapter are defined below. The
+per-unit **skill score** compares a model's mean absolute error to the profile baseline's for the
+same spatial unit $i$,
+
+$$\text{skill}_i = 1 - \frac{\text{MAE}_{\text{model},\,i}}{\text{MAE}_{\text{baseline},\,i}}$$ {#eq-skill}
+
+so that $0$ means tied with the baseline, $1$ means zero error, and a negative value means worse
+than the baseline. The reported **demand-weighted skill** aggregates the per-unit skills with
+weights equal to each unit's median demand $m_i$, so the highest-volume units dominate,
+
+$$\text{skill}_{\text{demand-weighted}} = \frac{\sum_i m_i \, \text{skill}_i}{\sum_i m_i}.$$ {#eq-demand-weighted-skill}
+
+The **weighted RMSE** is a pooled, absolute-scale error over every test-set row $j$ (a unit
+crossed with a time window), with $y_j$ and $\hat{y}_j$ the actual and predicted demand and
+$\bar{d}_{u(j)}$ the train-period mean demand of the unit that row $j$ belongs to,
+
+$$\text{weighted RMSE} = \sqrt{\frac{\sum_j \bar{d}_{u(j)} \left(y_j - \hat{y}_j\right)^2}{\sum_j \bar{d}_{u(j)}}}.$$ {#eq-weighted-rmse}
+
+## Predictive Analytics: Baseline
 
 ![Raw per-window demand is heavily right-skewed, which is why both SVR and NN regress on
 `log1p(count)` rather than raw counts.](assets/figures/prediction/ca4h_raw_demand.png){#fig-ca4h-raw-demand width="90%"}
 
-![Profile baseline test R² per community area. Pooled R² (0.933) is dominated by the
-highest-volume areas; the per-area distribution is much wider, with several areas
-negative.](assets/figures/prediction/ca4h_baseline_r2.png){#fig-ca4h-baseline-r2 width="90%"}
+![Profile baseline predictions vs. actual demand across an evaluation week, highest-demand
+community area (community area, 4-hour resolution). The baseline tracks the daily and weekly
+cycle closely.](assets/figures/prediction/ca4h_baseline_week.png){#fig-ca4h-baseline-week width="90%"}
 
-![Actual vs. predicted demand, test set, all five community-area models (baseline, pooled
-LinearSVR, demand-weighted LinearSVR, tuned RBF, tuned polynomial), log1p
-scale.](assets/figures/prediction/ca4h_actual_vs_predicted.png){#fig-ca4h-actual-vs-predicted width="95%"}
+![Profile baseline test $R^2$ per community area, 4-hour resolution. The pooled $R^2$ (0.933) is
+dominated by the highest-volume areas; the per-area distribution is much wider, with 21 of 77
+areas negative.](assets/figures/prediction/ca4h_baseline_r2.png){#fig-ca4h-baseline-r2 width="90%"}
 
-![Per-area skill map, pooled LinearSVR, all 77 community
-areas.](assets/figures/prediction/ca4h_skill_map.png){#fig-ca4h-skill-map width="70%"}
+| Resolution | Units | Pooled $R^2$ | Weighted RMSE | Median per-unit $R^2$ | Units with $R^2<0$ |
+|:---|---:|---:|---:|---:|---:|
+| Community area, 4-hour | 77 | 0.933 | 139.02 | 0.208 | 21 of 77 |
+| Community area, 1-hour | 77 | 0.918 | 39.46 | 0.028 | 36 of 77 |
+| Census tract, 4-hour | 179 | 0.896 | 100.99 | 0.195 | 56 of 179 |
 
-![Actual vs. all-models predictions for Community Area 8 (top-3 by demand), one evaluation
-week. Models track the daily cycle here, unlike the census-tract case
-below.](assets/figures/prediction/ca4h_top_area_all_models.png){#fig-ca4h-top-area width="90%"}
+: Profile baseline test scores by resolution. {#tbl-baseline-scores}
 
-![Median demand per area, with the low/medium/high tiers (9.1) and the 10 trips/window
-per-area threshold (9.2) used to select the 20 highest-demand
-areas.](assets/figures/prediction/ca4h_demand_tiers.png){#fig-ca4h-demand-tiers width="95%"}
+## Predictive Analytics: Community Area, 4-Hour Resolution
 
-![Tuned per-area RBF SVR vs. its untuned default, skill vs. baseline. This is the only
-configuration in the study with positive demand-weighted skill, and only for the
-highest-demand areas among the
-20.](assets/figures/prediction/ca4h_per_area_rbf_tuning.png){#fig-ca4h-per-area-rbf width="80%"}
+| Model | Units | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|---:|---:|
+| Profile baseline | 77 | 0.000 | 0.000 | 139.02 | 0.933 |
+| LinearSVR, pooled | 77 | -0.827 | -0.017 | 254.94 | 0.778 |
+| LinearSVR, demand-weighted | 77 | -0.675 | -0.052 | 231.91 | 0.814 |
+| LinearSVR, demand-tiered | 77 | -0.732 | 0.000 | 243.60 | 0.800 |
+| RBF, tuned (10k subsample) | 77 | -0.232 | -0.027 | 176.93 | 0.892 |
+| Polynomial, tuned (10k subsample) | 77 | -0.221 | -0.049 | 171.71 | 0.896 |
+| LinearSVR, per-area | 20 | -0.112 | -0.091 | 156.93 | 0.905 |
+| LinearSVR, per-area, tuned | 20 | -0.125 | -0.116 | 161.10 | 0.901 |
+| RBF, per-area | 20 | -0.135 | -0.105 | 163.37 | 0.897 |
+| **RBF, per-area, tuned** | 20 | **+0.012** | -0.002 | 143.80 | 0.921 |
 
-![NN model comparison, community area, 4h: demand-weighted skill, weighted RMSE, and relative
-MAE for baseline, Shallow NN, and tuned Deep
-NN.](assets/figures/prediction/ca4h_nn_comparison.png){#fig-ca4h-nn-comparison width="95%"}
+: SVR test scores, community area, 4-hour resolution. Per-area models cover only the 20 areas
+above the demand threshold. {#tbl-ca4h-svm tbl-colwidths="[34,8,16,13,15,14]"}
 
-![Tuned Deep NN per-area skill map, community area, 4h. O'Hare (upper left) is the one clearly
-red (negative-skill) area; nearly everywhere else is pale green
-(mildly positive).](assets/figures/prediction/ca4h_nn_skill_map.png){#fig-ca4h-nn-skill-map width="70%"}
+![Actual, baseline and SVR-variant demand across the March evaluation week, Community Area 8,
+community area 4-hour
+resolution.](assets/figures/prediction/ca4h_svm_march_week.png){#fig-ca4h-svm-march-week width="95%"}
 
-![NN model comparison, community area, 1h: demand-weighted skill, weighted RMSE, and relative
-MAE for baseline, Shallow NN, and tuned Deep NN. Unlike the 4h version
-(@fig-ca4h-nn-comparison), the tuned Deep NN is the only model here to beat the
-baseline.](assets/figures/prediction/ca1h_nn_comparison.png){#fig-ca1h-nn-comparison width="95%"}
+![Pooled `LinearSVR` per-area skill vs. the profile baseline, all 77 community areas, 4-hour
+resolution.](assets/figures/prediction/ca4h_svm_skill_map.png){#fig-ca4h-svm-skillmap width="55%"}
 
-## Census Tract Resolution
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ | Fit time |
+|:---|---:|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 139.02 | 0.933 | 1s |
+| Shallow NN (untuned) | -0.028 | +0.097 | 144.96 | 0.925 | 324s |
+| Deep NN (tuned) | -0.027 | +0.071 | 145.93 | 0.927 | 2,333s |
+
+: Neural network test scores, community area, 4-hour resolution. {#tbl-ca4h-nn}
+
+![Actual, baseline and neural-network demand across the March evaluation week, Community Area 8
+(highest demand), community area 4-hour
+resolution.](assets/figures/prediction/ca4h_nn_march_week.png){#fig-ca4h-nn-march-week width="95%"}
+
+![Tuned deep NN per-area skill vs. the profile baseline, all 77 community areas, 4-hour
+resolution. O'Hare (upper left) is the one clearly negative
+area.](assets/figures/prediction/ca4h_nn_skill_map.png){#fig-ca4h-nn-skillmap width="55%"}
+
+## Predictive Analytics: Community Area, 1-Hour Resolution
+
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 39.46 | 0.918 |
+| SVR -- LinearSVR, pooled | -1.016 | +0.022 | 76.96 | 0.687 |
+| SVR -- RBF, tuned | -0.331 | +0.015 | 54.53 | 0.835 |
+| SVR -- Polynomial, tuned | -0.361 | 0.000 | 56.14 | 0.793 |
+| NN -- Shallow (untuned) | -0.048 | +0.118 | 42.28 | 0.903 |
+| **NN -- Deep (tuned)** | **+0.062** | +0.090 | 36.26 | 0.928 |
+
+: Test scores for both families, community area, 1-hour resolution. {#tbl-ca1h}
+
+![SVR March-week demand, Community Area 8, 1-hour
+resolution.](assets/figures/prediction/ca1h_svm_march_week.png){#fig-ca1h-svm-march-week width="95%"}
+
+![Neural-network March-week demand, Community Area 8, 1-hour
+resolution.](assets/figures/prediction/ca1h_nn_march_week.png){#fig-ca1h-nn-march-week width="95%"}
+
+![Pooled `LinearSVR` per-area skill vs. the profile baseline, all 77 community areas, 1-hour
+resolution.](assets/figures/prediction/ca1h_svm_skill_map.png){#fig-ca1h-svm-skillmap width="55%"}
+
+![Tuned deep NN per-area skill vs. the profile baseline, all 77 community areas, 1-hour
+resolution.](assets/figures/prediction/ca1h_nn_skill_map.png){#fig-ca1h-nn-skillmap width="55%"}
+
+## Predictive Analytics: Census Tract, 4-Hour Resolution
 
 ![Scope map: the 179 of 878 census tracts with enough tract-precision data to support a
 tract-level model, across 11 community
 areas.](assets/figures/prediction/tract_scope_map.png){#fig-tract-scope-map width="70%"}
 
-![Profile baseline test R² per census tract. Wider spread than the community-area version
-(@fig-ca4h-baseline-r2), consistent with more units competing for the same total
-demand.](assets/figures/prediction/tract_baseline_r2.png){#fig-tract-baseline-r2 width="90%"}
+![Profile baseline test $R^2$ per census tract, 4-hour resolution. Wider spread than the
+community-area version (@fig-ca4h-baseline-r2), consistent with more units competing for the same
+total demand.](assets/figures/prediction/tract_baseline_r2.png){#fig-tract-baseline-r2 width="90%"}
 
-![LinearSVR feature-coefficient magnitudes, census tract. GMM hotspot-distance coefficients
-(red) dominate every other continuous
-feature.](assets/figures/prediction/tract_feature_importance_coefs.png){#fig-tract-feature-importance-coefs width="95%"}
+| Model | Dem.-weighted skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|
+| Profile baseline | 0.000 | 100.99 | 0.896 |
+| Shallow NN (untuned) | -0.098 | 113.77 | 0.868 |
+| Deep NN (reused 4h config) | -0.340 | 138.71 | 0.821 |
 
-![Per-tract skill vs. median demand (log scale).](assets/figures/prediction/tract_skill_vs_demand.png){#fig-tract-skill-vs-demand width="95%"}
+: Neural network test scores, census tract, 4-hour resolution (179 in-scope tracts). {#tbl-tract}
 
-![Per-tract skill map, pooled LinearSVR, all 179 in-scope
-tracts.](assets/figures/prediction/tract_skill_map.png){#fig-tract-skill-map width="70%"}
+![Actual, baseline and neural-network demand across the March evaluation week, top-demand census
+tract (17031760900), 4-hour resolution (estimated trips after inverse-retention
+scaling).](assets/figures/prediction/tract_nn_march_week.png){#fig-tract-nn-march-week width="95%"}
 
-## Pending
-
-- **Full model-comparison table**: skill, weighted RMSE, pooled R²/MAE/RMSE per model, per
-  resolution, both families (source data already available in
-  `results/model_results_summary.csv`).
-- **1-hour resolution SVR figures**: the `03.02` notebook has no saved execution output (see the
-  Predictive Analytics chapter's Limitations), so no plot output exists yet to extract from.
-- **Census-tract NN figures**: pending `03.06` being finalized.
+![Tuned deep NN per-tract skill vs. the profile baseline, 179 in-scope census tracts, 4-hour
+resolution.](assets/figures/prediction/tract_nn_skill_map.png){#fig-tract-nn-skillmap width="55%"}

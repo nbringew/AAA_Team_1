@@ -2,6 +2,10 @@
 \usepackage{indentfirst}
 \setlength{\parindent}{30pt}
 
+% Allow the [H] float specifier (place floats exactly where written); used in
+% the appendix to keep its many figures/tables in source order.
+\usepackage{float}
+
 % Section titles formatting
 \usepackage{titlesec}
 \titleformat{\section}
@@ -35,3 +39,13 @@
 
 % Define placeholders for metadata used in header/footer
 \providecommand{\headerauthor}{}
+
+% Long inline-code identifiers (e.g. long_column_names) have no natural break
+% point and can be wider than their table cell, overflowing into the next
+% column. \texttt disables hyphenation, so inside longtables only, let code
+% spans wrap at any character via seqsplit; prose elsewhere is unaffected.
+\usepackage{seqsplit}
+\let\originaltexttt\texttt
+\newcommand{\seqsplittexttt}[1]{\seqsplit{#1}}
+\AtBeginEnvironment{longtable}{\let\texttt\seqsplittexttt}
+\AtEndEnvironment{longtable}{\let\texttt\originaltexttt}
