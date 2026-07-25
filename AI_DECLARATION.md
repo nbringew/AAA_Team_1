@@ -6,7 +6,7 @@ summarized below.
 
 ## Scope of Use
 
-Generative AI tools (e.g., large language model-based assistants) were used to support the
+Generative AI tools were used to support the
 following aspects of the project:
 
 - **Coding**: Assisting with writing, debugging, and refactoring code in the analysis notebooks
@@ -25,10 +25,3 @@ presented in this report reflect the judgment of the team members. Generative AI
 reviewed, verified, and edited by the team before inclusion in the project; the team takes full
 responsibility for the accuracy and integrity of the final content.
 
-## Team Sign-off
-
-| Name | Role/Contribution | Date |
-|:---|:---|:---|
-|  |  |  |
-|  |  |  |
-|  |  |  |
