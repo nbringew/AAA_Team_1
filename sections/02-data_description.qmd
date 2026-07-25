@@ -1,4 +1,4 @@
-# Data Description
+# Data Description {#sec-data-description}
 
 The analysis combines taxi trip records, hourly weather observations, spatial reference data,
 and electricity prices. Taxi and weather data cover 2024-01-01 through 2026-05-31. The period
@@ -37,7 +37,7 @@ that may generate taxi demand.
 ## Electricity Price Data
 
 The reinforcement-learning analysis uses EPEX SPOT day-ahead prices obtained through the
-Fraunhofer ISE Energy-Charts API. The data cover the German--Luxembourg bidding zone from
+Fraunhofer ISE Energy-Charts API [@fraunhoferise2026energycharts]. The data cover the German--Luxembourg bidding zone from
 January through March 2025 and are converted from EUR/MWh to EUR/kWh. For each of the 90 days,
 prices between 14:00 and 16:00 are transformed into eight 15-minute values matching the
 charging decisions. These published prices are observable to the price-aware charging agent;
