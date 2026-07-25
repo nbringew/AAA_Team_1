@@ -16,6 +16,8 @@ are collected the same way and pointed to from the Problem Setup and Results sec
 \floatplacement{table}{H}
 ```
 
+{{< pagebreak >}}
+
 ## Cleaned Dataset: Column Reference
 
 Every column of `data/chicago_taxi_2024_2026_clean.parquet` (14,465,662 rows), with dtype,
@@ -54,6 +56,8 @@ masking, the two coordinate resolutions).
 | `dropoff_ca_centroid_lon` | float32 | 91.6% | 77 | Dropoff community area centroid longitude -- always CA-level resolution. |
 
 : Data dictionary, cleaned dataset. {#tbl-column-reference tbl-colwidths="[16,10,10,10,54]"}
+
+{{< pagebreak >}}
 
 ## Descriptive Analytics: Tables and Spatial Hot Spots
 
@@ -121,6 +125,48 @@ masking, the two coordinate resolutions).
 
 : Final three-component GMM hot spots. {#tbl-gmm-hotspots-summary}
 
+{{< pagebreak >}}
+
+## Predictive Analytics: Baseline
+
+The **profile baseline** predicts each unit's demand from its own historical calendar profile.
+Let $b(t) = \bigl(\text{hour}(t),\, \text{dow}(t),\, \text{month}(t)\bigr)$ be the calendar bucket of
+time window $t$ -- hour-of-day, day-of-week ($0$–$6$), and month. For a unit $i$ and a test window
+$t$, the baseline predicts the mean training-set demand of that unit over all training windows
+falling in the same bucket,
+
+$$\hat{y}^{\text{base}}_{i,t} = \frac{1}{\lvert \mathcal{T}^{\,b(t)}_i \rvert} \sum_{s \in \mathcal{T}^{\,b(t)}_i} y_{i,s},
+\qquad \mathcal{T}^{\,b}_i = \bigl\{\, s \in \text{train} : b(s) = b \,\bigr\},$$ {#eq-baseline}
+
+computed independently for every unit $i$, so each unit gets its own reference. At 4-hour
+resolution the hour component takes the window's start hour ($0, 4, \dots, 20$), giving
+$6 \times 7 \times 12 = 504$ buckets per unit; at 1-hour resolution there are
+$24 \times 7 \times 12 = 2016$. The implementation falls back to unit $i$'s overall training-set
+mean $\bar{y}^{\text{train}}_i$ for any bucket absent from training, but with two full years
+(2024--2025) as the training window and a complete zero-filled grid, every bucket is populated, so
+this fallback never triggers at the resolutions used here.
+
+![Raw per-window demand is heavily right-skewed, which is why both SVR and NN regress on
+`log1p(count)` rather than raw counts.](assets/figures/prediction/ca4h_raw_demand.png){#fig-ca4h-raw-demand width="90%"}
+
+| Resolution | Units | Pooled $R^2$ | Weighted RMSE | Median per-unit $R^2$ | Units with $R^2<0$ |
+|:---|---:|---:|---:|---:|---:|
+| Community area, 4-hour | 77 | 0.933 | 139.02 | 0.208 | 21 of 77 |
+| Community area, 1-hour | 77 | 0.918 | 39.46 | 0.028 | 36 of 77 |
+| Census tract, 4-hour | 179 | 0.896 | 100.99 | 0.195 | 56 of 179 |
+
+: Profile baseline test scores by resolution. {#tbl-baseline-scores}
+
+![Profile baseline predictions vs. actual demand across the March evaluation week, highest-demand
+community area (community area, 4-hour resolution). The baseline tracks the daily and weekly
+cycle closely.](assets/figures/prediction/ca4h_baseline_week.png){#fig-ca4h-baseline-week width="90%"}
+
+![Profile baseline test $R^2$ per community area, 4-hour resolution. The pooled $R^2$ (0.933) is
+dominated by the highest-volume areas; the per-area distribution is much wider, with 21 of 77
+areas negative.](assets/figures/prediction/ca4h_baseline_r2.png){#fig-ca4h-baseline-r2 width="90%"}
+
+{{< pagebreak >}}
+
 ## Predictive Analytics: Metric Definitions
 
 The two headline metrics used throughout the Predictive Analytics chapter are defined below. The
@@ -141,26 +187,7 @@ $\bar{d}_{u(j)}$ the train-period mean demand of the unit that row $j$ belongs t
 
 $$\text{weighted RMSE} = \sqrt{\frac{\sum_j \bar{d}_{u(j)} \left(y_j - \hat{y}_j\right)^2}{\sum_j \bar{d}_{u(j)}}}.$$ {#eq-weighted-rmse}
 
-## Predictive Analytics: Baseline
-
-![Raw per-window demand is heavily right-skewed, which is why both SVR and NN regress on
-`log1p(count)` rather than raw counts.](assets/figures/prediction/ca4h_raw_demand.png){#fig-ca4h-raw-demand width="90%"}
-
-![Profile baseline predictions vs. actual demand across an evaluation week, highest-demand
-community area (community area, 4-hour resolution). The baseline tracks the daily and weekly
-cycle closely.](assets/figures/prediction/ca4h_baseline_week.png){#fig-ca4h-baseline-week width="90%"}
-
-![Profile baseline test $R^2$ per community area, 4-hour resolution. The pooled $R^2$ (0.933) is
-dominated by the highest-volume areas; the per-area distribution is much wider, with 21 of 77
-areas negative.](assets/figures/prediction/ca4h_baseline_r2.png){#fig-ca4h-baseline-r2 width="90%"}
-
-| Resolution | Units | Pooled $R^2$ | Weighted RMSE | Median per-unit $R^2$ | Units with $R^2<0$ |
-|:---|---:|---:|---:|---:|---:|
-| Community area, 4-hour | 77 | 0.933 | 139.02 | 0.208 | 21 of 77 |
-| Community area, 1-hour | 77 | 0.918 | 39.46 | 0.028 | 36 of 77 |
-| Census tract, 4-hour | 179 | 0.896 | 100.99 | 0.195 | 56 of 179 |
-
-: Profile baseline test scores by resolution. {#tbl-baseline-scores}
+{{< pagebreak >}}
 
 ## Predictive Analytics: Community Area, 4-Hour Resolution
 
@@ -187,6 +214,12 @@ resolution.](assets/figures/prediction/ca4h_svm_march_week.png){#fig-ca4h-svm-ma
 ![Pooled `LinearSVR` per-area skill vs. the profile baseline, all 77 community areas, 4-hour
 resolution.](assets/figures/prediction/ca4h_svm_skill_map.png){#fig-ca4h-svm-skillmap width="55%"}
 
+![Pooled `LinearSVR` coefficients on the standardized features (community area, 4-hour). Left:
+magnitude (feature importance); right: sign. The calendar features -- the hour-of-day harmonics
+above all, then weekend/holiday, weekday and month -- dominate, while the weather variables rank
+lowest, with precipitation and snowfall near
+zero.](assets/figures/prediction/ca4h_svm_feature_importance.png){#fig-ca4h-svm-featimp width="95%"}
+
 | Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ | Fit time |
 |:---|---:|---:|---:|---:|---:|
 | Profile baseline | 0.000 | 0.000 | 139.02 | 0.933 | 1s |
@@ -203,30 +236,114 @@ resolution.](assets/figures/prediction/ca4h_nn_march_week.png){#fig-ca4h-nn-marc
 resolution. O'Hare (upper left) is the one clearly negative
 area.](assets/figures/prediction/ca4h_nn_skill_map.png){#fig-ca4h-nn-skillmap width="55%"}
 
+{{< pagebreak >}}
+
+## Predictive Analytics: SVR Hyperparameter Grids
+
+The kernel SVR configurations were tuned with `GridSearchCV`, scoring on $R^2$. Two searches were
+run: a **pooled** search over the full 77-area panel, tuned on a 10,000-row subsample with
+`KFold(3, shuffled)` cross-validation (kernel SVR training is quadratic-to-cubic in rows, so the
+full panel is infeasible); and a **per-area** search that fits a dedicated model for each of the
+20 areas above the median-demand threshold, using `TimeSeriesSplit(3)`. The pooled grids are
+identical at 4-hour and 1-hour resolution; the per-area search was run only at 4-hour resolution.
+
+| Search | Kernel | Grid searched | Cross-validation |
+|:---|:---|:---|:---|
+| Pooled (10k subsample) | Polynomial | $C \in \{1, 10, 100\}$, degree $\in \{2, 3\}$, gamma $=$ scale | KFold(3, shuffled) |
+| Pooled (10k subsample) | RBF | $C \in \{10, 100\}$, gamma $\in \{\text{scale}, 0.01\}$ | KFold(3, shuffled) |
+| Per-area (20 areas) | Linear | $C \in \{0.01, 0.1, 1, 10, 100\}$, $\epsilon \in \{0.01, 0.1\}$ | TimeSeriesSplit(3) |
+| Per-area (20 areas) | RBF | $C \in \{10, 100, 1000\}$, gamma $\in \{\text{scale}, 0.01\}$ | TimeSeriesSplit(3) |
+
+: SVR grid-search spaces. Unless it is itself a grid dimension, $\epsilon$ is fixed at $0.1$.
+{#tbl-svr-search tbl-colwidths="[22,14,44,20]"}
+
+{{< pagebreak >}}
+
+## Predictive Analytics: Neural Network Architecture Search
+
+The deep network was selected by a **one-factor-at-a-time (OFAT) screen**: starting from the
+reference configuration below, each candidate turns exactly one knob so its effect is isolated
+against a common baseline. Every knob that improved demand-weighted skill over the reference was
+then combined into a single config (with the mutually exclusive capacity settings reduced to the
+single best-improving one), and the reported deep network is whichever of the reference, the
+single-knob variants, or the combined config scored best. This search was run once at the default
+community-area, 4-hour resolution and the selected config was reused unchanged at the 1-hour and
+census-tract settings.
+
+| Hyperparameter | Reference | Values screened (one at a time) |
+|:---|:---|:---|
+| Width (2 hidden layers) | 128 / 64 | 64 / 32, 256 / 128, 512 / 256 |
+| Depth | 2 layers (128 / 64) | 5 layers (512 / 256 / 128 / 64 / 32) |
+| Dropout | 0.0 | 0.2 |
+| Weight decay (L2) | 0.0 | 1e-4 |
+| Learning rate | 1e-3 | 1e-4, 3e-4, 3e-3, 1e-2 |
+| Batch size | 512 | 128, 256, 1024, 2048 |
+
+: Neural network hyperparameter search space. All candidates use the Adam optimizer and ReLU
+activations, and are trained for up to 200 epochs with early stopping (patience 8) on count-space
+demand-weighted RMSE. {#tbl-nn-search tbl-colwidths="[26,22,52]"}
+
+{{< pagebreak >}}
+
+## Predictive Analytics: O'Hare Time-Feature Experiment
+
+To test whether the pooled network could be nudged toward O'Hare's atypical round-the-clock
+demand, O'Hare-specific time features were added -- the area-76 dummy interacted with the
+hour-of-day sine/cosine harmonics -- on top of the standard feature set, and the shallow and deep
+networks were refit on the same panel, baseline, and methodology as @tbl-ca4h-nn. The features did
+not help. The best model from the experiment, the shallow network, reached demand-weighted skill
+$-0.030$ -- no better than the $-0.028$ it scores without them (@tbl-ca4h-nn) -- and the deep
+network was substantially worse.
+
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 139.02 | 0.933 |
+| Shallow NN (+ O'Hare time features) | -0.030 | +0.097 | 144.38 | 0.926 |
+| Deep NN (+ O'Hare time features) | -0.186 | +0.071 | 166.64 | 0.906 |
+
+: Neural network test scores with added O'Hare-specific time features, community area, 4-hour
+resolution. Compare the base-feature versions in @tbl-ca4h-nn (shallow $-0.028$, deep $-0.027$).
+{#tbl-ohare}
+
+![Shallow network (with added O'Hare-specific time features) per-area skill vs. the profile
+baseline, all 77 community areas, 4-hour resolution -- the best-scoring model from the experiment.
+O'Hare (upper left) remains among the weaker areas, and the added features leave overall skill
+essentially unchanged.](assets/figures/prediction/ca4h_nn_ohare_skill_map.png){#fig-ca4h-nn-ohare-skillmap width="55%"}
+
+{{< pagebreak >}}
+
 ## Predictive Analytics: Community Area, 1-Hour Resolution
 
 | Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
 |:---|---:|---:|---:|---:|
 | Profile baseline | 0.000 | 0.000 | 39.46 | 0.918 |
-| SVR -- LinearSVR, pooled | -1.016 | +0.022 | 76.96 | 0.687 |
-| SVR -- RBF, tuned | -0.331 | +0.015 | 54.53 | 0.835 |
-| SVR -- Polynomial, tuned | -0.361 | 0.000 | 56.14 | 0.793 |
-| NN -- Shallow (untuned) | -0.048 | +0.118 | 42.28 | 0.903 |
-| **NN -- Deep (tuned)** | **+0.062** | +0.090 | 36.26 | 0.928 |
+| LinearSVR, pooled | -1.016 | +0.022 | 76.96 | 0.687 |
+| RBF, tuned | -0.331 | +0.015 | 54.53 | 0.835 |
+| Polynomial, tuned | -0.361 | 0.000 | 56.14 | 0.793 |
 
-: Test scores for both families, community area, 1-hour resolution. {#tbl-ca1h}
+: SVR test scores, community area, 1-hour resolution. {#tbl-ca1h-svm}
 
 ![SVR March-week demand, Community Area 8, 1-hour
 resolution.](assets/figures/prediction/ca1h_svm_march_week.png){#fig-ca1h-svm-march-week width="95%"}
 
-![Neural-network March-week demand, Community Area 8, 1-hour
-resolution.](assets/figures/prediction/ca1h_nn_march_week.png){#fig-ca1h-nn-march-week width="95%"}
-
 ![Pooled `LinearSVR` per-area skill vs. the profile baseline, all 77 community areas, 1-hour
 resolution.](assets/figures/prediction/ca1h_svm_skill_map.png){#fig-ca1h-svm-skillmap width="55%"}
 
+| Model | Dem.-weighted skill | Median skill | Weighted RMSE | Pooled $R^2$ |
+|:---|---:|---:|---:|---:|
+| Profile baseline | 0.000 | 0.000 | 39.46 | 0.918 |
+| Shallow NN (untuned) | -0.048 | +0.118 | 42.28 | 0.903 |
+| **Deep NN (tuned)** | **+0.062** | +0.090 | 36.26 | 0.928 |
+
+: Neural network test scores, community area, 1-hour resolution. {#tbl-ca1h-nn}
+
+![Neural-network March-week demand, Community Area 8, 1-hour
+resolution.](assets/figures/prediction/ca1h_nn_march_week.png){#fig-ca1h-nn-march-week width="95%"}
+
 ![Tuned deep NN per-area skill vs. the profile baseline, all 77 community areas, 1-hour
 resolution.](assets/figures/prediction/ca1h_nn_skill_map.png){#fig-ca1h-nn-skillmap width="55%"}
+
+{{< pagebreak >}}
 
 ## Predictive Analytics: Census Tract, 4-Hour Resolution
 
@@ -253,6 +370,18 @@ scaling).](assets/figures/prediction/tract_nn_march_week.png){#fig-tract-nn-marc
 ![Tuned deep NN per-tract skill vs. the profile baseline, 179 in-scope census tracts, 4-hour
 resolution.](assets/figures/prediction/tract_nn_skill_map.png){#fig-tract-nn-skillmap width="55%"}
 
+{{< pagebreak >}}
+
+## Predictive Analytics: Year-over-Year Demand Growth
+
+![Year-over-year demand growth over the January--May window common to all three years (the only
+span with complete data in 2026). Left: average trips per observed day, pooled over January--May,
+rising from 14,788 in 2024 to 16,120 in 2025 ($+9.0\%$) and 16,871 in 2026 ($+4.7\%$). Right: the
+same comparison per month, with 2026 above 2025 above 2024 in every one of the five
+months.](assets/figures/prediction/yoy_demand_growth.png){#fig-yoy-demand width="95%"}
+
+{{< pagebreak >}}
+
 ## Reinforcement Learning: Environment Assumptions
 
 | Quantity | Value | Meaning |
@@ -265,6 +394,8 @@ resolution.](assets/figures/prediction/tract_nn_skill_map.png){#fig-tract-nn-ski
 | Penalty | 100 €/kWh shortage | shortfall penalty |
 
 : Environment assumptions for the charging task {#tbl-assumptions}
+
+{{< pagebreak >}}
 
 ## Reinforcement Learning: Results
 
