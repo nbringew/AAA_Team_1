@@ -1,7 +1,5 @@
 # Reinforcement Learning
 
-## Problem Setup
-
 The task considers a taxi driver who charges her vehicle at home during a fixed afternoon
 window; a flat charging rate is replaced by an agent that selects the charging power for each
 interval, subject to the vehicle's battery capacity. The battery must cover a shift's demand,
@@ -9,42 +7,26 @@ which is stochastic and unknown until departure, so recharging cost must be weig
 
 ## Markov Decision Process
 
-The charging problem is modeled as a finite-horizon Markov Decision Process. Without day-ahead price information, the state is
+The charging problem is modeled as a finite-horizon Markov Decision Process. Without day-ahead
+price information, the state is $s_t=[SOC_t,t,C]$, where $SOC_t$ is the current energy level,
+$t\in\{0,\ldots,8\}$ the time step, and $C$ the battery capacity; the realized demand is
+deliberately excluded. When day-ahead prices are included, the state extends to
+$s_t^{EPEX}=[SOC_t,t,C,\pi_t^{DA},\bar{\pi}_{\geq t}^{DA}]$, adding the current and
+mean-remaining day-ahead price.
 
-$$
-s_t=[SOC_t,t,C],
-$$
-
-where $SOC_t$ is the current energy level, $t\in\{0,\ldots,8\}$ is the time step, and $C$ is battery capacity. The realized demand is deliberately excluded from the state. When day-ahead price information is included, the state is extended with the current day-ahead price and the mean remaining day-ahead price:
-
-$$
-s_t^{EPEX}=[SOC_t,t,C,\pi_t^{DA},\bar{\pi}_{\geq t}^{DA}].
-$$
-Four discrete charging powers of 0, 5, 11, and 22 kW are used initially. Because this sparse spacing leads to degenerate behavior under the exponential cost function, a refined grid of 0, 4, 8, 12, 16, 20, and 22 kW is used in the final iteration. For a 15-minute interval,the transition is
-
-$$
-SOC_{t+1}=\min(C,SOC_t+p_t\cdot0.25).
-$$
-
-The step reward is the negative charging cost. After the eighth decision, a terminal penalty is added if $SOC_8<d$:
-
-$$
-r_8=-\text{cost}_8-100\max(0,d-SOC_8).
-$$
-
-A cost-reliability trade-off results: additional energy is inexpensive relative to a shortage, while the tail risk must be learned from sampled experience.
+Four discrete charging powers of 0, 5, 11, and 22 kW are used initially; because this sparse
+spacing leads to degenerate behavior under the exponential cost function, a refined grid of
+0, 4, 8, 12, 16, 20, and 22 kW is used in the final iteration. For a 15-minute interval the
+transition is $SOC_{t+1}=\min(C,SOC_t+p_t\cdot0.25)$. The step reward is the negative charging
+cost; after the eighth decision a terminal penalty is added if $SOC_8<d$, giving
+$r_8=-\text{cost}_8-100\max(0,d-SOC_8)$. A cost-reliability trade-off results: additional energy is inexpensive relative to a shortage, while the tail risk must be learned from sampled experience.
 
 ## Cost Environments and Electricity Prices
 
 Two `gymnasium` environments are used, sharing the same battery dynamics and hidden-demand
 process but differing in charging-cost model. In the stylized environment, the cost of
-selecting power $p$ in interval $t$ is defined as
-
-$$
-\operatorname{cost}(t,p)=\alpha_t\exp(p),
-$$
-
-where $\alpha_t$ increases from $2.0\times10^{-10}$ to $7.2\times10^{-10}$ over the charging
+selecting power $p$ in interval $t$ is $\operatorname{cost}(t,p)=\alpha_t\exp(p)$, where
+$\alpha_t$ increases from $2.0\times10^{-10}$ to $7.2\times10^{-10}$ over the charging
 window. The small coefficients are required because $\exp(22)$ is approximately
 $3.6\times10^9$. Even charging at 22 kW in all eight intervals costs only 11.90 reward units,
 compared with the shortage penalty of 100 € per missing kWh, ensuring charging is always better than not charging. Consequently, the original costs of 0, 5, and 11 kW are almost indistinguishable, while 22 kW
@@ -57,13 +39,9 @@ The EPEX environment uses the day-ahead price data described in @sec-data-descri
 one day before delivery and linearly interpolated within each hour to the eight quarter-hour
 charging decisions. The resulting series range from -0.026 € to 0.371 € per kWh, with a median
 of 0.110 € per kWh. Charging is billed at the realized price
-
-$$
-\pi_t=\pi_t^{DA}+\varepsilon_t,
-\qquad \varepsilon_t\sim\mathcal{N}(0,0.015^2)\ \text{€/kWh},
-$$
-
-which is not observable before the decision. $\varepsilon_t$ represents the gap between the day-ahead forecast and the delivery price and is simulated rather than drawn from real data.
+$\pi_t=\pi_t^{DA}+\varepsilon_t$, with $\varepsilon_t\sim\mathcal{N}(0,0.015^2)$ €/kWh not
+observable before the decision; $\varepsilon_t$ represents the gap between the day-ahead
+forecast and the delivery price and is simulated rather than drawn from real data.
 
 ## Learning Algorithm and Benchmarks
 
@@ -75,13 +53,9 @@ paired episodes, using identical seeds so that capacity, initial SOC, demand, pr
 simulated price deviations match across strategies.
 
 The operational benchmark is a price-blind greedy heuristic. Because demand is unknown,
-charging is not targeted at the realized requirement; instead, a fixed target is used:
-
-$$
-\tau=\min(C,\mu+2\sigma)=\min(C,40\text{ kWh}),
-$$
-
-corresponding to an approximate 97.7% service level under the assumed normal distribution. At
+charging is not targeted at the realized requirement; instead, a fixed target
+$\tau=\min(C,\mu+2\sigma)=\min(C,40\text{ kWh})$ is used, corresponding to an approximate 97.7%
+service level under the assumed normal distribution. At
 each step, the energy still missing from this target is spread over the remaining time, and the
 smallest sufficient charging power is selected.
 

@@ -1,57 +1,44 @@
 # Data Description {#sec-data-description}
 
-The analysis combines taxi trip records, hourly weather observations, spatial reference data,
-and electricity prices. Taxi and weather data cover 2024-01-01 through 2026-05-31. The period
-ends in May because the city portal reports recent trips with a delay; including the incomplete
-June data would create an artificial decline in demand.
+The analysis combines taxi trip records, hourly weather observations, spatial reference data, and
+electricity prices. Taxi and weather data cover 2024-01-01 through 2026-05-31; the period ends in
+May because the city portal reports recent trips with a delay, so including the incomplete June
+data would create an artificial decline in demand.
 
-## Taxi Trip Data
+**Taxi trip data.** The main source is the Chicago Taxi Trips dataset from the City of Chicago Data
+Portal [@chicagodataportal2026taxitrips] (dataset `Taxi Trips (2024-)`). Each row is one reported
+trip by a licensed Chicago taxi; before cleaning the extract contains 16,086,196 rows and 21
+columns, with trip timestamps and duration, distance, fare components, payment type, taxi company,
+anonymized identifiers, and pickup/dropoff locations. Locations are reported through the identifiers
+and centroids of Chicago's 77 community areas and 878 census tracts. Census tracts provide finer
+spatial detail but are frequently masked in low-volume areas for privacy; where a tract is
+unavailable, the coordinate columns may instead hold the community-area centroid. This mixed spatial
+resolution limits fine-grained interpretation and is handled during data preparation and spatial
+analysis.
 
-The main source is the Chicago Taxi Trips dataset from the City of Chicago Data Portal
-[@chicagodataportal2026taxitrips] (dataset `Taxi Trips (2024-)`). Each row represents one reported trip by a licensed Chicago taxi. Before
-cleaning, the extract contains 16,086,196 rows and 21 columns. It includes trip timestamps and
-duration, distance, fare components, payment type, taxi company, anonymized identifiers, and
-pickup and dropoff locations.
+**Weather data.** Hourly weather observations come from the Open-Meteo archive API
+[@openmeteo2026archive]: 21,168 observations and nine variables over the same period as the taxi
+data, including temperature, apparent temperature, precipitation, snowfall, wind speed, cloud cover,
+and WMO weather conditions. Weather is joined to the demand data by timestamp and provides exogenous
+features that are also known for future prediction periods.
 
-Locations are reported through the identifiers and centroids of Chicago's 77 community areas and 878 census tracts. Census tracts provide finer spatial detail but are frequently masked in
-low-volume areas for privacy. Where tract information is unavailable, the coordinate columns
-may instead contain community-area centroids. This mixed spatial resolution limits fine-grained
-interpretation and is considered during data preparation and spatial analysis.
+**Spatial reference data.** Official boundary files provide polygons for Chicago's 77 community
+areas [@chicagodataportal2026communityareas], 878 census tracts [@chicagodataportal2026censustracts],
+and the city boundary [@chicagodataportal2026cityboundary], supporting mapping, spatial joins, and
+demand aggregation at different resolutions. Selected spatial visualizations use OpenStreetMap
+basemap tiles [@osmcontributors2026tiles] for visual context; map data are \textcopyright{}
+OpenStreetMap contributors, available under the Open Database License.
 
-## Weather Data
+**Electricity price data.** The reinforcement-learning analysis uses EPEX SPOT day-ahead prices from
+the Fraunhofer ISE Energy-Charts API [@fraunhoferise2026energycharts], covering the
+German--Luxembourg bidding zone from January through March 2025 and converted from EUR/MWh to
+EUR/kWh. For each of the 90 days, prices between 14:00 and 16:00 are transformed into eight 15-minute
+values matching the charging decisions; these published prices are observable to the price-aware
+charging agent, while the price ultimately billed is simulated by adding a random short-term
+deviation (details in the reinforcement-learning section).
 
-Hourly weather observations are obtained from the Open-Meteo archive API
-[@openmeteo2026archive]. The dataset contains
-21,168 observations and nine variables for the same period as the taxi data. Variables include
-temperature, apparent temperature, precipitation, snowfall, wind speed, cloud cover, and WMO
-weather conditions. Weather is joined to the demand data by timestamp and provides exogenous
-features that can also be known for future prediction periods.
-
-## Spatial Reference Data 
-
-Official boundary files provide polygons for Chicago's 77 community areas
-[@chicagodataportal2026communityareas], 878 census tracts [@chicagodataportal2026censustracts],
-and the city boundary [@chicagodataportal2026cityboundary]. They support mapping, spatial joins, and demand aggregation at different
-geographic resolutions. Point-of-interest data from OpenStreetMap [@osmcontributors2026poi] add locations such as
-transport facilities, amenities, and tourism-related places, helping to characterize areas
-that may generate taxi demand. Selected spatial visualizations additionally use OpenStreetMap
-basemap tiles [@osmcontributors2026tiles] for visual context; map data are
-\textcopyright{} OpenStreetMap contributors, available under the Open Database License.
-
-## Electricity Price Data
-
-The reinforcement-learning analysis uses EPEX SPOT day-ahead prices obtained through the
-Fraunhofer ISE Energy-Charts API [@fraunhoferise2026energycharts]. The data cover the German--Luxembourg bidding zone from
-January through March 2025 and are converted from EUR/MWh to EUR/kWh. For each of the 90 days,
-prices between 14:00 and 16:00 are transformed into eight 15-minute values matching the
-charging decisions. These published prices are observable to the price-aware charging agent;
-the price ultimately billed is simulated by adding a random short-term deviation. Details of
-this transformation and the simulated price process are given in the reinforcement-learning
-section.
-
-## Granularity and Limitations
-
-The cleaned taxi data contain 14,465,662 rows and 27 columns. For spatial analytics and predictions, taxi trip observations are aggregated from individual trips into spatio-temporal demand panels,
-using community areas or census tracts and hourly or four-hour windows. Key limitations are privacy-related location masking,
-the reporting lag in recent portal data, mixed spatial precision, and the use of licensed taxi
-trips as a proxy for wider ride-hailing demand.
+**Granularity and limitations.** The cleaned taxi data contain 14,465,662 rows and 27 columns. For
+spatial analytics and predictions, individual trips are aggregated into spatio-temporal demand
+panels by community area or census tract and hourly or four-hour window. Key limitations are
+privacy-related location masking, the reporting lag in recent portal data, mixed spatial precision,
+and the use of licensed taxi trips as a proxy for wider ride-hailing demand.

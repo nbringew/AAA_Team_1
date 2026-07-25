@@ -50,21 +50,14 @@ The leading zones vary over time (@tbl-spatial-time). Near North Side dominates 
 drop-off blocks, with the Loop leading from 04:00--08:00. Origins and destinations must therefore
 be modeled separately, and fleet positioning should change over the day.
 
-The three spatial resolutions provide complementary views. Community Areas are complete,
-recognizable operating zones but hide local variation. Census Tracts offer finer detail, although
-the existing analysis retains only the 6,245,422 trips (43.17%) for which both tract identifiers
-are available. The four-hour pickup maps illustrate the resulting difference in spatial detail
-(@fig-pickup-ca-4h; @fig-pickup-tract-4h). H3 resolution 7 provides a uniform grid for comparing
-pickup and drop-off patterns across four-hour blocks (@fig-pickup-h3-4h;
-@fig-dropoff-h3-4h), but it cannot recover street-level precision because the anonymized data
-contain only 573 distinct pickup and 687 drop-off coordinate pairs. H3 is therefore retained as
-a descriptive view but not used for prediction: assigning anonymized centroids to hexagons
-would create apparent spatial detail that is not present in the source data, while Community
-Areas provide more interpretable operating zones and Census Tracts represent the finest
-official resolution available where reported. Only one H3 size is tested; resolution variation
-is primarily examined through Community Areas, Census Tracts, H3, and the one-, two-, three-,
-four-hour, and daily temporal bins. Finer resolutions reveal local peaks but are more sparse
-and privacy-sensitive.
+Three different spatial resolutions were explored (@fig-pickup-ca-4h; @fig-pickup-tract-4h;
+@fig-pickup-h3-4h). Community areas are complete, recognizable operating zones
+but hide local variation; census tracts add finer detail but are available for only 43.17% of trips
+(6,245,422), since low-volume tracts are masked for privacy. H3 resolution 7 offers a uniform grid,
+but the anonymized data carry only 573 distinct pickup and 687 drop-off coordinate pairs, so mapping
+them to hexagons would invent spatial detail the source does not contain. Because demand is natively
+reported at community-area and census-tract resolution, H3 is kept only as a descriptive view and
+dropped for prediction, where a mismatched grid would distort the picture.
 
 ## Gaussian-Mixture Hot Spots
 

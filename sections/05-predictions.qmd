@@ -1,150 +1,138 @@
 # Predictive Analytics
 
-## Problem Description
-
-We predict taxi pickup demand -- the number of trips originating in a spatial unit within a
-fixed time window. Two model families are used: Support Vector Regression (SVR) and feedforward
-neural networks (NN). Both are evaluated at community-area resolution in 4-hour and 1-hour
-windows; census-tract resolution (4-hour) is evaluated with the neural network only and not evaluated at 1-hour resolution at all, both due to computational complexity. Community
-area at 4-hour resolution is treated as the default setting throughout, and the other
-resolutions are presented as deviations from it.
+We predict taxi pickup demand -- the number of trips originating in a spatial unit within a fixed
+time window -- with two model families: Support Vector Regression (SVR) and feedforward neural
+networks (NN). Both are evaluated at community-area resolution in 4-hour and 1-hour windows; census
+tract (4-hour) is run with the neural network only, all due to computational cost. Community area at
+4-hour resolution is the default throughout, and the other resolutions are presented as deviations
+from it.
 
 ## Modeling Approach
 
-Both families share the same task framing: a single **pooled model per experiment**, trained
-across all spatial units at once, with spatial identity encoded as one-hot dummies
-rather than fit as separate per-unit models. Two families were tried for complementary reasons:
-Linear SVR is interpretable through its coefficients, and kernelized SVR can capture nonlinear relationships -- e.g. between spatial identity and temporal features. Feedforward neural networks can learn nonlinear relationships far more flexibly but typically at the cost of interpretability.
+Both families share one task framing: a single **pooled model per experiment**, trained across all
+spatial units at once, with spatial identity encoded as one-hot dummies rather than as separate
+per-unit models. The families are complementary: linear SVR is interpretable through its
+coefficients, kernelized SVR captures nonlinear relationships (e.g. between spatial identity and
+time), and feedforward networks learn them far more flexibly, but at the cost of interpretability.
 
-The central obstacle is that demand is not one distribution but varies
-roughly three orders of magnitude across community areas, and each unit has its own daily and
-weekly rhythm: an airport runs around the clock on flight schedules, while a downtown office
-district peaks at commute hours and goes quiet overnight. A pooled model must represent all of
-that with one set of parameters. This is hardest for a linear SVR, whose single global
-coefficient vector can only find one compromise direction across every unit at once; a kernel
-SVR could in principle represent the heterogeneity, but its training cost scales quadratically to
-cubically in the number of rows, which forces the kernel variants onto a 10,000-row subsample. A feedforward neural network can absorb this heterogeneity by learning unit‑specific nonlinear interactions, but doing so increases complexity and sacrifices the interpretability that linear models provide.
+The central obstacle is that demand is not one distribution: it varies roughly three orders of
+magnitude across community areas, and each unit has its own daily and weekly rhythm -- an airport
+runs around the clock on flight schedules, a downtown office district peaks at commute hours and
+goes quiet overnight -- yet a pooled model must represent all of it with one parameter set. This is
+hardest for a linear SVR, whose single global coefficient vector can find only one compromise
+direction across every unit; a kernel SVR could represent the heterogeneity in principle, but its
+quadratic-to-cubic training cost forces the kernel variants onto a 10,000-row subsample. A neural
+network can absorb the heterogeneity by learning unit-specific nonlinear interactions, at the cost
+of complexity and interpretability.
 
-Both use the same exogenous feature set: weather (temperature, precipitation, snowfall, wind,
-cloud cover), cyclical time encodings (sine/cosine pairs for hour-of-day and weekday, two
-harmonics each), month, and weekend/holiday indicators. No lagged or autoregressive demand features are included, as the goal is to predict future demand from spatial identity and time features rather than recent demand. Both regress on `log1p(count)`, with
-predictions back-transformed via a clipped `expm1`, since raw demand is heavily right-skewed
+Both use the same exogenous features: weather (temperature, precipitation, snowfall, wind, cloud
+cover), cyclical time encodings (sine/cosine pairs for hour-of-day and weekday, two harmonics each),
+month, and weekend/holiday indicators. No lagged or autoregressive demand features are used, since
+the goal is to predict from spatial identity and time rather than recent demand. Both regress on
+`log1p(count)` and back-transform via a clipped `expm1`, as raw demand is heavily right-skewed
 (@fig-ca4h-raw-demand).
 
 ## Validation Strategy {#sec-validation}
 
 Every model is judged against a **profile baseline**: the train-set mean demand for each
-(time-of-day window, weekday, month) bucket, computed separately for each spatial unit
-(@eq-baseline). It makes a natural reference because it is itself a deployable strategy -- a cheap,
-interpretable lookup of each unit's historical averages -- so
-a model that cannot beat it is not worth the added complexity. Because it is
-fitted per unit, the baseline sidesteps the heterogeneity problem described above -- it never has
-to compromise one parameter set across areas whose demand differs by three orders of magnitude --
-which is what makes it a demanding reference throughout this section. Both model families use the
-same chronological holdout: training on 2024-01-01 through 2025-12-31 and testing on 2026-01-01
-through 2026-05-31, over a complete zero-filled grid of every unit crossed with every time
-window, so that evaluation includes genuine zero-demand periods and not only observed trips. All
-reported metrics are computed over the entire test period. For the qualitative trace figures, a single representative week from the test set -- the week beginning 2026-03-02, referred
-to throughout as the **March evaluation week** -- is plotted to show each model's predictions
-against actual and baseline demand at readable resolution.
+(time-of-day window, weekday, month) bucket, computed separately per spatial unit (@eq-baseline). It
+is a natural reference because it is itself deployable -- a cheap, interpretable lookup of each
+unit's historical averages -- so a model that cannot beat it is not worth the added complexity.
+Being fitted per unit, it sidesteps the heterogeneity problem above, never compromising one
+parameter set across areas whose demand differs by three orders of magnitude, which makes it a
+demanding reference throughout. Both families use the same chronological holdout: training on
+2024-01-01 through 2025-12-31 and testing on 2026-01-01 through 2026-05-31, over a complete
+zero-filled grid of every unit and time window, so evaluation includes genuine zero-demand periods,
+not only observed trips. Metrics are computed over the whole test period; for the qualitative trace
+figures, a single representative week -- beginning 2026-03-02, referred to throughout as the
+**March evaluation week** -- shows each model's predictions against actual and baseline demand at
+readable resolution.
 
-The baseline already explains a large share of the variation in the data. At the default
-community-area, 4-hour resolution its pooled test $R^2$ is 0.933 (@tbl-baseline-scores), and it
-tracks the daily and weekly demand cycle closely across the March evaluation week
-(@fig-ca4h-baseline-week); the same holds at the finer settings (pooled $R^2$ 0.918 at 1-hour and
-0.896 at census-tract level). Per-unit fit is far more variable -- median per-area $R^2$ is only
-0.208 at 4-hour resolution, with 21 of 77 areas negative (@fig-ca4h-baseline-r2) -- because the
-pooled figure is dominated by the few highest-volume units. Most of that per-unit spread is
-irreducible, though: in low-demand units (around one trip per window) demand is largely count
-noise, so per-area $R^2$ is low for any predictor.
+The baseline already explains much of the variation in the data. At the default community-area,
+4-hour resolution its pooled test $R^2$ is 0.933 (@tbl-baseline-scores), tracking the daily and
+weekly cycle closely across the March evaluation week (@fig-ca4h-baseline-week); the same holds at
+finer settings (pooled $R^2$ 0.918 at 1-hour and 0.896 at census-tract level). Per-unit fit is far
+more variable -- median per-area $R^2$ is only 0.208 at 4-hour resolution, with 21 of 77 areas
+negative (@fig-ca4h-baseline-r2) -- because the pooled figure is dominated by the few highest-volume
+units. Most of that spread is irreducible, though: in low-demand units (around one trip per window)
+demand is largely count noise, so per-area $R^2$ is low for any predictor.
 
-Two headline metrics summarise each model; both
-are built to survive the demand heterogeneity described above.
-**Demand-weighted skill** measures how far a model beats the profile baseline, one unit at a time.
-For a unit $i$ it is one minus the ratio of the model's mean absolute error to the baseline's MAE
-on that same unit (@eq-skill), so a skill of $0$ means the model exactly ties the baseline there,
-$1$ means zero error, a negative value means worse than the baseline, and a positive value means better than the baseline.
-The per-unit skills are then collapsed into one number with weights proportional to each unit's
-median demand (@eq-demand-weighted-skill), so the busiest areas dominate. That weighting is
-deliberate: an unweighted mean would let the dozens of near-empty units outvote the high-volume areas that actually drive fleet allocation.
-**Weighted RMSE** (@eq-weighted-rmse) is the absolute-scale companion to skill: a single pooled
-root-mean-square error over every test row, reported in trips per window so it reads directly
-rather than as a ratio. Each squared error is weighted by its area's train-period mean demand, so
-a miss in a high-volume area counts far more than the same miss in a low-demand one.
-Because it is an absolute magnitude rather than a comparison against the baseline, it is the metric
-used to rank the two model families head-to-head.
+Two headline metrics summarise each model, both built to survive the demand heterogeneity above.
+**Demand-weighted skill** measures how far a model beats the profile baseline, one unit at a time:
+for a unit $i$ it is one minus the ratio of the model's mean absolute error to the baseline's MAE on
+that same unit (@eq-skill), so $0$ ties the baseline, $1$ is zero error, negative is worse and
+positive is better. The per-unit skills are then collapsed into one number weighted by each unit's
+median demand (@eq-demand-weighted-skill), so the busiest areas dominate -- deliberately, since an
+unweighted mean would let the dozens of near-empty units outvote the high-volume areas that drive
+fleet allocation. **Weighted RMSE** (@eq-weighted-rmse) is the absolute-scale companion: a single
+pooled root-mean-square error over every test row, in trips per window so it reads directly rather
+than as a ratio, with each squared error weighted by its area's train-period mean demand, so a miss
+in a high-volume area counts far more than the same miss in a low-demand one. Being an absolute
+magnitude rather than a comparison against the baseline, it is the metric used to rank the two model
+families head-to-head.
 
 ## Results
 
 ### Support Vector Regression -- Community Area, 4-Hour
 
-Nine SVR configurations were run at this resolution, forming a progression that steadily relaxes
-the single pooled-model constraint; all are collected in @tbl-ca4h-svm, with the grids used to tune
-the kernel models in @tbl-svr-search. The plain
-pooled `LinearSVR` reaches demand-weighted skill $-0.827$ (weighted RMSE 254.94), far below the
-baseline, because one global coefficient vector cannot serve areas whose demand spans three orders
-of magnitude. Two attempts to correct this while keeping the pooled linear model both fail:
-weighting each training row by its area's demand so that high-volume areas count more in the loss
-(the *demand-weighted* variant, $-0.675$), and splitting the 77 areas into three demand terciles
-with a separate `LinearSVR` fitted within each (the *demand-tiered* variant, $-0.732$), leave skill
-essentially level with the unmodified fit.
+Nine SVR configurations were run at this resolution, forming a progression that steadily relaxes the
+single pooled-model constraint; all are collected in @tbl-ca4h-svm, with the grids used to tune the
+kernel models in @tbl-svr-search. The plain pooled `LinearSVR` reaches demand-weighted skill
+$-0.827$ (weighted RMSE 254.94), far below the baseline, because one global coefficient vector
+cannot serve areas whose demand spans three orders of magnitude. Two attempts to correct this while
+keeping the pooled linear model both fail: weighting each training row by its area's demand (the
+*demand-weighted* variant, $-0.675$), and splitting the 77 areas into three demand terciles each
+with its own `LinearSVR` (the *demand-tiered* variant, $-0.732$), leave skill essentially level with
+the unmodified fit.
 
-Allowing nonlinearity helps but is not enough. An RBF and a polynomial kernel, each tuned by grid
-search on a 10,000-row subsample (using the complete dataset is too costly on the full panel), reach $-0.232$
-and $-0.221$ -- a clear step up from the linear variants, yet still short of the baseline. Only
-abandoning pooling closes the gap: fitting fully separate models for the 20 areas above a
-median-demand threshold of 10 trips per window scores higher, and the tuned per-area RBF SVR
-is the single configuration with positive demand-weighted skill, $+0.012$ (weighted RMSE 143.80) --
-the only SVR setup to beat the baseline, only by a small margin and only once pooling is dropped entirely.
-@fig-ca4h-svm-march-week shows the pooled variants over the March week in Community Area 8, and
-@fig-ca4h-svm-skillmap maps pooled `LinearSVR` skill across the 77 areas.
+Allowing nonlinearity helps but is not enough: an RBF and a polynomial kernel, each tuned by grid
+search on a 10,000-row subsample (the full panel is too costly for kernel SVR), reach $-0.232$ and
+$-0.221$ -- a clear step up from the linear variants, yet still short of the baseline. Only
+abandoning pooling closes the gap: fitting separate models for the 20 areas above a median-demand
+threshold of 10 trips per window, the tuned per-area RBF SVR is the single configuration with
+positive demand-weighted skill, $+0.012$ (weighted RMSE 143.80) -- the only SVR to beat the baseline,
+and only once pooling is dropped. @fig-ca4h-svm-march-week shows the pooled variants over the March
+week in Community Area 8, and @fig-ca4h-svm-skillmap maps pooled `LinearSVR` skill across the 77
+areas.
 
 ### Neural Network -- Community Area, 4-Hour
 
-Two networks were run: an untuned shallow network (one hidden layer) and a deeper network
-selected by a one-factor-at-a-time architecture search -- the reference configuration and the
-values screened for each hyperparameter are listed in @tbl-nn-search. Their test scores are in
-@tbl-ca4h-nn.
-The shallow network reaches demand-weighted skill $-0.028$ (weighted RMSE 144.96) and the tuned
-deep network $-0.027$ (weighted RMSE 145.93), against the baseline's 139.02; both sit just below
-the baseline on skill. @fig-ca4h-nn-march-week shows the three models tracing demand across the
-March evaluation week in the highest-demand area (Community Area 8). The per-area skill map
-(@fig-ca4h-nn-skillmap) is at or above zero across most of the city, with O'Hare (community area
-76) the one clearly negative area (skill $-0.227$). Due to this, adding O'Hare-specific time features (the
-area dummy interacted with the hour-of-day harmonics) was tried but did not help -- the
-best variant reached only demand-weighted skill $-0.030$ (@tbl-ohare,
-@fig-ca4h-nn-ohare-skillmap).
+Two networks were run: an untuned shallow network (one hidden layer) and a deeper network selected
+by a one-factor-at-a-time architecture search over the hyperparameters in @tbl-nn-search; test
+scores are in @tbl-ca4h-nn. The shallow network reaches demand-weighted skill $-0.028$ (weighted
+RMSE 144.96) and the tuned deep network $-0.027$ (145.93), against the baseline's 139.02 -- both just
+below the baseline. @fig-ca4h-nn-march-week traces the three models across the March evaluation week
+in the highest-demand area (Community Area 8), and the per-area skill map (@fig-ca4h-nn-skillmap) is
+at or above zero across most of the city, with O'Hare (community area 76) the one clearly negative
+area (skill $-0.227$). Adding O'Hare-specific time features (the area dummy interacted with the
+hour-of-day harmonics) was tried but did not help -- the best variant reached only $-0.030$
+(@tbl-ohare, @fig-ca4h-nn-ohare-skillmap).
 
 ### Spatial and Temporal Resolution Variations
 
-**Community area, 1-hour.** At 1-hour resolution the same 77 areas are split across 24 hourly buckets instead of 6, 
-quadrupling the rows and the baseline's granularity. Test scores are in @tbl-ca1h-svm for SVR and
-@tbl-ca1h-nn for the neural network, each against the profile baseline. For SVR, demand-weighted
-skill of the pooled `LinearSVR` falls to $-1.016$  and the best tuned
-kernel (RBF) reaches $-0.331$. For the neural network, the tuned deep configuration selected at
-4-hour resolution (reused unchanged due to computational cost) reaches demand-weighted skill $+0.062$ (weighted RMSE 36.26,
-against the baseline's 39.46) -- the only positive NN result in the study -- while the shallow
-network stays negative ($-0.048$). March-week traces appear in @fig-ca1h-svm-march-week and
-@fig-ca1h-nn-march-week, and per-area skill maps in @fig-ca1h-svm-skillmap and
-@fig-ca1h-nn-skillmap.
+**Community area, 1-hour.** The same 77 areas are now split across 24 hourly buckets instead of 6,
+quadrupling the rows and the baseline's granularity; scores are in @tbl-ca1h-svm (SVR) and
+@tbl-ca1h-nn (NN), each against the profile baseline. For SVR, the pooled `LinearSVR` falls to
+$-1.016$ and the best tuned kernel (RBF) reaches $-0.331$. For the NN, the tuned deep configuration
+from 4-hour (reused unchanged, for cost) reaches $+0.062$ (weighted RMSE 36.26 vs the baseline's
+39.46) -- the only positive NN result in the study -- while the shallow network stays negative
+($-0.048$). Traces and per-area skill maps are in @fig-ca1h-svm-march-week, @fig-ca1h-nn-march-week,
+@fig-ca1h-svm-skillmap and @fig-ca1h-nn-skillmap.
 
-**Census tract, 4-hour.** Only 44.6% of trips carry a true tract-level location; Chicago masks the rest to the
-community-area centroid whenever a tract had too few trips in a period, for privacy. To recover
-realistic tract-level demand, tract-precision coverage was first measured per community area, and
-only areas retaining at least 5% of their trips at tract precision were kept -- a natural gap in
-the data separates areas at 4.85% from those at 7.17% -- leaving **179 of 878 tracts across 11
-community areas** in scope (@fig-tract-scope-map); the remaining areas are left out of tract-level
-modelling. Within scope, per-window counts were built from tract-precision trips only
-and then scaled up by each area's inverse retention rate, so the observed fraction is
-extrapolated to an estimate of each tract's total demand. This keeps the masked points from
-spiking demand artificially onto whichever tract holds a community area's centroid.
+**Census tract, 4-hour.** Only 44.6% of trips carry a true tract-level location; Chicago masks the
+rest to the community-area centroid when a tract has too few trips, for privacy. To recover realistic
+tract-level demand, tract-precision coverage was measured per community area, and only areas
+retaining at least 5% of their trips at tract precision were kept -- a natural gap separates areas at
+4.85% from those at 7.17% -- leaving **179 of 878 tracts across 11 community areas** in scope
+(@fig-tract-scope-map); the rest are left out of tract-level modelling. Within scope, per-window
+counts were built from tract-precision trips only and scaled up by each area's inverse retention
+rate, extrapolating the observed fraction to each tract's total demand; this keeps masked points from
+spiking demand onto whichever tract holds a community area's centroid.
 
-Only neural networks were run at this resolution (@tbl-tract). The shallow network reaches
-demand-weighted skill $-0.098$ (weighted RMSE 113.77, against the baseline's 100.99) and the
-deep network $-0.340$. March-week traces for the top tract are in @fig-tract-nn-march-week and
-the per-tract skill map in @fig-tract-nn-skillmap. SVR was not run at tract level because a
-per-tract one-hot encoding (up to 878 dummy variables) is computationally infeasible for kernel
-SVR.
+Only neural networks were run here (@tbl-tract): the shallow network reaches $-0.098$ (weighted RMSE
+113.77 vs the baseline's 100.99) and the deep network $-0.340$; traces and the per-tract skill map
+are in @fig-tract-nn-march-week and @fig-tract-nn-skillmap. SVR was not run at tract level because a
+per-tract one-hot encoding (up to 878 dummy variables) is computationally infeasible for kernel SVR.
 
 ## Discussion
 
@@ -152,48 +140,45 @@ SVR.
 
 Across every setting the profile baseline is a strong reference, precisely because it is fitted per
 unit: a single pooled model must instead reconcile demand spanning three orders of magnitude and
-areas with distinct daily and weekly rhythms, a compromise the baseline never faces. This
-difficulty is not distributed evenly across the high-demand areas. The pooled models predict the
-busy, commute-driven areas such as downtown well -- at 4-hour resolution the deep network matches or beats the
-baseline (@fig-ca4h-nn-skillmap), and at 1-hour resolution it is
-clearly positive there (@fig-ca1h-nn-skillmap). The exception is O'Hare; it
-follows a different daily pattern from the citywide commute cycle and is the single worst area for
-the deep network (deep NN skill $-0.227$ in O'Hare at 4-hour resolution) and -- as one of the highest-demand units -- on its own pulls the
-network to near break-even overall. The neural network comes closest to the baseline, reaching
-demand-weighted skill $+0.062$ at 1-hour resolution; pooled SVR trails at every resolution, and
-only abandoning pooling -- a dedicated per-area RBF model for the 20 busiest areas -- turns positive
-($+0.012$).
+areas with distinct daily and weekly rhythms, a compromise the baseline never faces. This difficulty
+is not distributed evenly across the high-demand areas. The pooled models predict the busy,
+commute-driven areas such as downtown well -- at 4-hour resolution the deep network matches or beats
+the baseline (@fig-ca4h-nn-skillmap), and at 1-hour resolution it is clearly positive there
+(@fig-ca1h-nn-skillmap). The exception is O'Hare; it follows a different daily pattern from the
+citywide commute cycle and is the single worst area for the deep network (skill $-0.227$ at 4-hour
+resolution) and -- as one of the highest-demand units -- on its own pulls the network to near
+break-even overall. The neural network comes closest to the baseline, reaching demand-weighted skill
+$+0.062$ at 1-hour resolution; pooled SVR trails at every resolution, and only abandoning pooling -- a
+dedicated per-area RBF model for the 20 busiest areas -- turns positive ($+0.012$).
 
-A second source of error is systematic and shared by every model here, and it is visible in
-@fig-yoy-demand: demand is not stationary over the observation window. Across the January--May
-span common to all three years, average daily demand rose $+9.0\%$ from 2024 to 2025 and a further
-$+4.7\%$ into 2026, with every one of the five months higher year-on-year. Because the models train
-on 2024--2025 and are tested on 2026, and the feature set deliberately carries no year or trend
-term (nor any autoregressive demand signal), every predictor -- the profile baseline included -- is
-calibrated to the lower 2024--2025 level and therefore under-predicts the 2026 test period. Part of
-the residual between actual and predicted demand is thus this unmodelled upward trend rather than
-model misfit, layered on top of the per-area effects described above.
+A second source of error is shared by every model and visible in @fig-yoy-demand: demand is not
+stationary over the observation window. Across the January--May span common to all three years,
+average daily demand rose $+9.0\%$ from 2024 to 2025 and a further $+4.7\%$ into 2026, every one of
+the five months higher year-on-year. Because the models train on 2024--2025 and test on 2026, and the
+features carry no year or trend term (nor any autoregressive signal), every predictor -- the baseline
+included -- is calibrated to the lower 2024--2025 level and under-predicts 2026. Part of the
+actual-minus-predicted residual is thus this unmodelled upward trend, not model misfit, on top of the
+per-area effects above.
 
-One input the models have but the baseline lacks is weather, and it turns out to be a weak signal.
-In the pooled `LinearSVR` the calendar features dominate, hour-of-day above all, while every weather
-variable ranks near the bottom, temperature strongest and precipitation and snowfall negligible
-(@fig-ca4h-svm-featimp). This is expected: weather is citywide, so it can only move the whole city's
-demand up or down rather than separate one area from another, and the baseline's month bucket
-already absorbs the seasonal part -- so it adds little the calendar does not.
+One input the models have but the baseline lacks is weather, and it is a weak signal. In the pooled
+`LinearSVR` the calendar features dominate -- hour-of-day above all -- while every weather variable
+ranks near the bottom, temperature strongest, precipitation and snowfall negligible
+(@fig-ca4h-svm-featimp). This is expected: weather is citywide, so it can only shift the whole city
+up or down, not separate one area from another, and the baseline's month bucket already absorbs the
+seasonal part.
 
-Resolution matters in opposite directions for the two families. For matched SVR types, skill is
-worse at 1-hour than at 4-hour, so the finer grid sharpens the high-demand gap; for the neural
-network, the 4-hour architecture transfers to 1-hour cleanly and produces its one clear win.
-Census-tract results are the weakest overall: even with the inverse-retention extrapolation, the
-per-unit signal is thin once 179 units compete for demand, and both networks fall below the tract
-baseline.
+Resolution matters in opposite directions: for matched SVR types skill is worse at 1-hour than
+4-hour (the finer grid sharpens the high-demand gap), while for the network the 4-hour architecture
+transfers to 1-hour cleanly and produces its one clear win. Census-tract results are weakest overall:
+even with inverse-retention extrapolation the per-unit signal is thin once 179 units compete for
+demand, and both networks fall below the tract baseline.
 
 ### Practical Implications
 
-The overriding practical finding is that the profile baseline is hard to beat. Across the low-demand tail -- most of the city's units --
-absolute errors are only a fraction of a trip per window, so no model's edge over the cheap baseline
-is operationally meaningful. What value a trained model adds is confined to the atypical high-demand
-hubs.
+The overriding practical finding is that the profile baseline is hard to beat. Across the low-demand
+tail -- most of the city's units -- absolute errors are only a fraction of a trip per window, so no
+model's edge over the cheap baseline is operationally meaningful. What value a trained model adds is
+confined to the atypical high-demand hubs.
 
 Whether that value justifies training at all is a close call. At the default 4-hour resolution no
 pooled model beats the baseline; the only configuration that does is the per-area RBF, and only by
@@ -203,14 +188,5 @@ the baseline -- yet its own advantage shows up only at 1-hour resolution, where 
 just from 39.46 to 36.26 (about 8%). The recommendation is therefore to run the cheap baseline, or a
 single pooled network, across the city, and add a per-area or higher-resolution model only for the
 few high-demand hubs whose pattern departs from the citywide norm.
-
-<!-- ## Limitations & Outlook
-
-- **SVR and NN are not yet evaluated on fully matched scope** (differing demand thresholds), so
-  the cross-family comparisons above are directional rather than exact.
-- **A single chronological holdout is used throughout**; no rolling-origin backtest.
-- **The census-tract extrapolation** scales observed tract-precision demand up by inverse
-  retention, which assumes the masked share follows the same temporal profile as the observed
-  one; tract-level models remain below their baseline. -->
 
 <!-- See @sec-appendix for detailed tables and figures. -->

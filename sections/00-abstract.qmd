@@ -1,0 +1,13 @@
+# Abstract {.unnumbered .unlisted}
+
+This project studies operational planning for an electric taxi fleet in Chicago, using 14.5 million
+cleaned taxi trips (2024--2026) as a proxy for ride-hailing demand. Descriptive analysis maps demand
+across space and time, identifying stable downtown and airport hot spots and strong daily and weekly
+cycles. Two prediction families -- Support Vector Regression and feedforward neural networks -- are
+trained at community-area and census-tract resolution and benchmarked against a per-unit profile
+baseline. The baseline proves hard to beat: the neural network is the strongest learned model but
+improves on it only marginally, and pooled models fail chiefly at O'Hare, whose demand pattern
+differs from the citywide norm. A reinforcement-learning agent then optimises home charging under
+day-ahead electricity prices; it lowers cost but sacrifices reliability, so a price-blind greedy
+policy remains safer. We recommend a cheap baseline citywide, targeted models for atypical hubs, and
+safety-constrained price-aware charging.

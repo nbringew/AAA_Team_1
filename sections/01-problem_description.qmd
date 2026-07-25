@@ -1,10 +1,8 @@
 # Introduction
 
-## Problem Description
-
 Urban taxi demand is highly uneven across both space and time. In a city such as Chicago,
 trip volumes vary by neighborhood, hour of day, weekday, weather conditions, airport
-activity, commuting patterns, and local points of interest. For a fleet operator, this creates
+activity, and commuting patterns. For a fleet operator, this creates
 a practical planning problem: vehicles should be available where passengers are likely to
 request rides, while unnecessary idle time, empty repositioning, and inefficient charging
 should be reduced.

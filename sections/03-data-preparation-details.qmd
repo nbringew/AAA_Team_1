@@ -1,45 +1,34 @@
-
 # Data Preparation {#sec-data-preparation}
 
-The raw taxi export contains 16,086,196 rows across 21 columns. The cleaning pipeline
-concatenates the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the
-result out as a single Parquet file. In total, 10.1% of trips (1,620,534 rows) are removed:
+The raw taxi export contains 16,086,196 rows across 21 columns. The cleaning pipeline concatenates
+the 2024, 2025, and 2026 CSV exports, applies the steps below, and writes the result as a single
+Parquet file. In total, 10.1% of trips (1,620,534 rows) are removed.
 
-1. **Duplicate removal.** Trips are deduplicated on `trip_id` before any other filtering
-   (775 rows removed), keeping the first occurrence. Rows without a `trip_id` are set aside
-   first and rejoined afterward, since `drop_duplicates` would otherwise treat several genuine
-   but ID-less trips as duplicates of each other.
+**Duplicate removal.** Trips are deduplicated on `trip_id`, keeping the first occurrence (775 rows);
+ID-less rows are set aside first and rejoined afterward, so `drop_duplicates` does not collapse
+several genuine but ID-less trips into one.
 
-2. **Handling missing spatial identifiers.** Chicago reports location at two resolutions:
-   `census_tract` (fine-grained) and `community_area` (77 coarse zones covering the whole
-   city). Tracts are missing for over half of trips — not randomly, but because the city masks
-   any tract with too few trips, for privacy. Community areas are far more complete
-   (98.2% pickup, 91.6% dropoff), since they're only missing when a trip starts or ends outside
-   city limits. Rather than dropping those out-of-city trips, we keep every row and add
-   `pickup_flag`/`dropoff_flag` columns marking whether an area is present, so later spatial
-   analyses can filter on the flags without losing the trips for everything else.
+**Missing spatial identifiers.** Location is reported at two resolutions: `census_tract`, masked for
+over half of trips because the city hides low-volume tracts for privacy, and `community_area` (98.2%
+pickup, 91.6% dropoff complete, missing only outside city limits). Out-of-city trips are kept, with
+`pickup_flag`/`dropoff_flag` columns marking area presence so later spatial analyses can filter
+without dropping rows.
 
-3. **Resolution-consistent centroids.** The centroid latitude/longitude columns silently mix
-   resolutions: where a tract exists, they hold its centroid; where it doesn't, they fall back
-   to the community area's centroid. We derive a clean area-to-centroid mapping from exactly
-   the rows where the raw coordinate already is the area centroid and join it back as separate
-   `*_ca_centroid_lat/lon` columns, giving a resolution-consistent coordinate for any
-   area-level aggregation.
+**Resolution-consistent centroids.** The raw centroid columns mix resolutions -- tract centroid
+where available, else community-area centroid. A clean area-to-centroid mapping, derived from the
+rows already at area-centroid resolution, is joined back as separate `*_ca_centroid_lat/lon` columns
+for consistent area-level aggregation.
 
-4. **Removal of incomplete trip records.** Trips missing `fare`, `trip_total`, `trip_seconds`,
-   or `trip_miles` are dropped (34,687 rows), since no meaningful analysis is possible without
-   them.
+**Incomplete records.** Trips missing `fare`, `trip_total`, `trip_seconds`, or `trip_miles` are
+dropped (34,687 rows), since no meaningful analysis is possible without them.
 
-5. **Outlier and plausibility filtering.** Negative `tips`/`tolls`/`extras` would be removed,
-   though none occur in practice — zero is legitimate, for example for cash trips that report
-   no tip. Trips below Chicago's legal minimum fare (\$3.25 flag-drop) [@chicagobacp2026placard] or shorter than
-   60 seconds are treated as test or aborted entries and removed, together with trips above the
-   99.9th percentile of distance (43.0 miles) or duration (165 minutes). These bounds account
-   for the bulk of all removed rows (1,585,072 of 1,620,534).
+**Outlier and plausibility filtering.** Trips below Chicago's \$3.25 minimum fare
+[@chicagobacp2026placard] or shorter than 60 seconds, and those above the 99.9th percentile of
+distance (43.0 miles) or duration (165 minutes), are removed -- 1,585,072 rows, the bulk of all
+removals. Negative `tips`/`tolls`/`extras` would also be dropped, but none occur; zero is legitimate
+(e.g. cash trips that report no tip).
 
-\noindent `payment_type` and `company` are left untouched throughout; their missing values remain as `NA`
-and are handled per analysis.
-
-\noindent The cleaned dataset has 14,465,662 rows and 27 columns, spanning 2024-01-01 to 2026-05-31.
-@tbl-column-reference in the appendix gives the full column-by-column reference: dtype,
-completeness, distinct-value count, and description for every column in the cleaned file.
+`payment_type` and `company` are left untouched; their missing values remain `NA` and are handled
+per analysis. The cleaned dataset has 14,465,662 rows and 27 columns, spanning 2024-01-01 to
+2026-05-31. @tbl-column-reference in the appendix gives the full column-by-column reference: dtype,
+completeness, distinct-value count, and description for every column.

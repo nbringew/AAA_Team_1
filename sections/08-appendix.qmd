@@ -1,3 +1,6 @@
+
+{{< pagebreak >}}
+
 # Appendix: Detailed Tables and Figures {#sec-appendix}
 
 Tables and figures below are referenced from the main text and grouped by chapter, in the same
@@ -122,10 +125,6 @@ masking, the two coordinate resolutions).
 {{< pagebreak >}}
 
 {{< embed notebooks/02_descriptive_analytics/02.3_descriptive-analytics_spatial.ipynb#fig-pickup-h3-4h >}}
-
-{{< pagebreak >}}
-
-{{< embed notebooks/02_descriptive_analytics/02.3_descriptive-analytics_spatial.ipynb#fig-dropoff-h3-4h >}}
 
 {{< pagebreak >}}
 
