@@ -19,9 +19,18 @@ date: 2026-07-26 # Date of submission
 
 <!-- While you could use \clearpage or \newpage, this is the recommended way to insert a page break in Quarto as it translates to the native page break command for the output format you are using (e.g., \clearpage for PDF, <div style="page-break-after: always;"></div> for HTML). -->
 
+{{< include sections/00-abstract.qmd >}}
+
 {{< pagebreak >}}
 
-{{< include sections/00-abstract.qmd >}}
+<!-- toc/lof/lot are disabled in _quarto.yml and emitted here instead, so the
+abstract comes first. \listoffigures, \listoftables and \listofequations each
+start a new page (see partials/header.tex). -->
+
+\tableofcontents
+\listoffigures
+\listoftables
+\listofequations
 
 {{< pagebreak >}}
 

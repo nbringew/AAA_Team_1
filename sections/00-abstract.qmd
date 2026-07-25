@@ -1,13 +1,3 @@
 # Abstract {.unnumbered .unlisted}
 
-This project studies operational planning for an electric taxi fleet in Chicago, using 14.5 million
-cleaned taxi trips (2024--2026) as a proxy for ride-hailing demand. Descriptive analysis maps demand
-across space and time, identifying stable downtown and airport hot spots and strong daily and weekly
-cycles. Two prediction families -- Support Vector Regression and feedforward neural networks -- are
-trained at community-area and census-tract resolution and benchmarked against a per-unit profile
-baseline. The baseline proves hard to beat: the neural network is the strongest learned model but
-improves on it only marginally, and pooled models fail chiefly at O'Hare, whose demand pattern
-differs from the citywide norm. A reinforcement-learning agent then optimises home charging under
-day-ahead electricity prices; it lowers cost but sacrifices reliability, so a price-blind greedy
-policy remains safer. We recommend a cheap baseline citywide, targeted models for atypical hubs, and
-safety-constrained price-aware charging.
+This project develops operational planning tools for an electric taxi fleet in Chicago, using 14.47 million cleaned taxi trips from 2024–2026 as a proxy for urban ride-hailing demand. Descriptive spatial analysis shows demand is highly concentrated -- more than 70% of assigned pickups originate in just four community areas -- with stable downtown and airport hot spots and pronounced daily and weekly cycles. To forecast pickups per spatial unit and time window, we train Support Vector Regression and Feedforward Neural Networks at community-area and census-tract resolution, benchmarking each against a per-unit historical profile baseline. That baseline proves difficult to beat: most pooled models score negative demand-weighted skill, the neural network is the only pooled model to surpass it (and only at one-hour resolution), and errors concentrate at O'Hare, whose round-the-clock pattern departs from the citywide commute cycle. A separate reinforcement-learning agent optimises home charging under day-ahead electricity prices; it lowers cost substantially but drops the charging success rate to 75%, so a price-blind greedy policy remains the safer choice. We recommend a transparent baseline citywide, targeted models reserved for atypical high-demand hubs, and price-aware charging only within hard reliability constraints.

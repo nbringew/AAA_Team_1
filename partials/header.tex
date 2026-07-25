@@ -6,9 +6,26 @@
 % the appendix to keep its many figures/tables in source order.
 \usepackage{float}
 
-% Start the list of figures on a new page after the table of contents.
+% Each front-matter list starts on its own page.
 \usepackage{etoolbox}
 \pretocmd{\listoffigures}{\clearpage}{}{}
+\pretocmd{\listoftables}{\clearpage}{}{}
+
+% List of Equations. LaTeX has no built-in list for equations, so this defines
+% one backed by a .loe file: \eqentry{...} placed after a numbered equation
+% records it, and \listofequations typesets the collected entries. Entries reuse
+% \l@figure so they are formatted like the list of figures and tables.
+\makeatletter
+\newcommand{\listofequations}{%
+    \clearpage
+    \section*{List of Equations}%
+    \@mkboth{List of Equations}{List of Equations}%
+    \@starttoc{loe}%
+}
+\newcommand{\eqentry}[1]{%
+    \addcontentsline{loe}{figure}{\protect\numberline{\theequation}#1}%
+}
+\makeatother
 
 % Section titles formatting
 \usepackage{titlesec}

@@ -151,6 +151,8 @@ falling in the same bucket,
 $$\hat{y}^{\text{base}}_{i,t} = \frac{1}{\lvert \mathcal{T}^{\,b(t)}_i \rvert} \sum_{s \in \mathcal{T}^{\,b(t)}_i} y_{i,s},
 \qquad \mathcal{T}^{\,b}_i = \bigl\{\, s \in \text{train} : b(s) = b \,\bigr\},$$ {#eq-baseline}
 
+\eqentry{Profile baseline prediction}
+
 computed independently for every unit $i$, so each unit gets its own reference. At 4-hour
 resolution the hour component takes the window's start hour ($0, 4, \dots, 20$), giving
 $6 \times 7 \times 12 = 504$ buckets per unit; at 1-hour resolution there are
@@ -188,17 +190,23 @@ same spatial unit $i$,
 
 $$\text{skill}_i = 1 - \frac{\text{MAE}_{\text{model},\,i}}{\text{MAE}_{\text{baseline},\,i}}$$ {#eq-skill}
 
+\eqentry{Per-unit skill score}
+
 so that $0$ means tied with the baseline, $1$ means zero error, and a negative value means worse
 than the baseline. The reported **demand-weighted skill** aggregates the per-unit skills with
 weights equal to each unit's median demand $m_i$, so the highest-volume units dominate,
 
 $$\text{skill}_{\text{demand-weighted}} = \frac{\sum_i m_i \, \text{skill}_i}{\sum_i m_i}.$$ {#eq-demand-weighted-skill}
 
+\eqentry{Demand-weighted skill}
+
 The **weighted RMSE** is a pooled, absolute-scale error over every test-set row $j$ (a unit
 crossed with a time window), with $y_j$ and $\hat{y}_j$ the actual and predicted demand and
 $\bar{d}_{u(j)}$ the train-period mean demand of the unit that row $j$ belongs to,
 
 $$\text{weighted RMSE} = \sqrt{\frac{\sum_j \bar{d}_{u(j)} \left(y_j - \hat{y}_j\right)^2}{\sum_j \bar{d}_{u(j)}}}.$$ {#eq-weighted-rmse}
+
+\eqentry{Weighted RMSE}
 
 {{< pagebreak >}}
 

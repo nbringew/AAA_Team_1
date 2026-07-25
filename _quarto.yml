@@ -21,8 +21,12 @@ format:
       - partials/header.tex
     cite-method: biblatex
     biblio-style: apa
-    toc: true
-    lof: true
+    # The front matter (abstract, then contents/figures/tables/equations) is
+    # emitted manually at the top of report.qmd so the abstract can sit directly
+    # after the title page; the template must not insert its own toc/lof/lot.
+    toc: false
+    lof: false
+    lot: false
     number-sections: true
     execute:
       echo: false
