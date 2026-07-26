@@ -1,6 +1,52 @@
 # Abstract {.unnumbered .unlisted}
 
-This project develops operational planning tools for an electric taxi fleet in Chicago, using 14.47 million cleaned taxi trips from 2024–2026 as a proxy for urban ride-hailing demand. Descriptive spatial analysis shows demand is highly concentrated -- more than 70% of assigned pickups originate in just four community areas -- with stable downtown and airport hot spots and pronounced daily and weekly cycles. To forecast pickups per spatial unit and time window, we train Support Vector Regression and Feedforward Neural Networks at community-area and census-tract resolution, benchmarking each against a per-unit historical profile baseline. That baseline proves difficult to beat: most pooled models score negative demand-weighted skill, the neural network is the only pooled model to surpass it (and only at one-hour resolution), and errors concentrate at O'Hare, whose round-the-clock pattern departs from the citywide commute cycle. A separate reinforcement-learning agent optimises home charging under day-ahead electricity prices; it lowers cost substantially but drops the charging success rate to 75%, so a price-blind greedy policy remains the safer choice. We recommend a transparent baseline citywide, targeted models reserved for atypical high-demand hubs, and price-aware charging only within hard reliability constraints.
+This project investigates how spatio-temporal demand analysis, machine-learning forecasts, and
+smart charging can support the operation of an electric taxi fleet in Chicago. The objective is
+to improve vehicle positioning and utilisation while ensuring that electric vehicles are
+charged reliably and at reasonable cost. Chicago taxi trips are used as a proxy for urban
+ride-hailing demand, defined as the number of observed pickups within a spatial unit and time
+window. The analysis combines taxi records, hourly weather observations, official spatial
+boundaries, and electricity-price data. After cleaning, the main dataset contains 14.47 million
+trips from January 2024 to May 2026. Trips are aggregated by community area or census tract and
+into hourly or four-hour intervals, allowing the consequences of different spatial and temporal
+resolutions to be examined.
+
+The descriptive analysis reveals strong and recurring demand patterns. Taxi activity is lowest
+at 03:00 and peaks at 17:00, while weekdays, particularly Thursdays, are substantially busier
+than weekends. Spatial demand is even more concentrated: Near North Side, O'Hare, the Loop, and
+Near West Side together account for 71.06% of pickups with a reported community area. A Gaussian
+Mixture Model further identifies three operational hot spots: the extended city centre, O'Hare,
+and the Midway/Garfield Ridge area. Although these locations remain stable, their relative
+importance changes during the day. Central Chicago dominates daytime demand, whereas O'Hare
+becomes more important during evening and overnight periods. These findings suggest that fleet
+allocation should focus on a small set of high-volume zones and rebalance vehicles between the
+city centre and airports over the course of the day.
+
+For demand prediction, Support Vector Regression and feedforward neural networks are trained at
+different spatial and temporal resolutions using calendar, weather, and spatial features. Their
+performance is compared with a transparent historical profile baseline that estimates demand
+separately for each spatial unit, time-of-day window, weekday, and month. This baseline already
+captures much of the stable demand structure and is difficult to outperform. Most pooled models
+achieve negative demand-weighted skill, indicating higher errors than the baseline in
+operationally important areas. The main pooled exception is the one-hour neural network, which
+reduces weighted RMSE by approximately 8% relative to the baseline. Dedicated nonlinear models
+also produce small improvements for selected high-demand areas. O'Hare remains particularly
+challenging because its continuous airport-related activity differs from the dominant citywide
+commuting pattern. Weather contributes comparatively little predictive information beyond the
+calendar profiles.
+
+A separate reinforcement-learning experiment models home charging as a finite-horizon decision
+problem under uncertain energy demand. Deep Q-Network agents choose charging power in 15-minute
+intervals and are compared with a price-blind greedy policy. Using EPEX day-ahead prices, the
+price-aware agent reduces charging costs by 41.7% on episodes in which both strategies meet
+demand. However, its overall charging success rate is only 75.2%, compared with 98.9% for the
+greedy policy, showing that part of the saving results from insufficient reserve rather than
+better timing alone. The study therefore recommends a conservative operational architecture:
+use profile-based forecasts across most of the city, reserve specialised models for atypical
+high-demand zones, and introduce price-aware charging only with hard minimum-energy and
+departure-reliability constraints. The results constitute a proof of concept; deployment would
+require complete vehicle duty cycles, charging-infrastructure data, and more precise spatial
+observations.
 
 {{< pagebreak >}}
 

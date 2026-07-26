@@ -60,7 +60,13 @@ masking, the two coordinate resolutions).
 
 {{< pagebreak >}}
 
-## Descriptive Analytics: Tables and Spatial Hot Spots
+## Descriptive Analytics: Temporal and Trip Patterns
+
+![Comparison of average hourly pickup demand for all days, the strict Saturday--Sunday weekend,
+and the extended Friday--Sunday period. Highlighted points and labels show the minimum and
+maximum of each profile.](assets/figures/descriptive/hourly_demand_day_selection.png){#fig-hourly-demand-day-selection width="100%"}
+
+{{< embed notebooks/02_descriptive_analytics/02.1_descriptive-analytics_taxis.ipynb#fig-temporal-resolution >}}
 
 | Day | Average pickups per observed day |
 |:---|---:|
@@ -83,6 +89,10 @@ masking, the two coordinate resolutions).
 
 : Distribution of trip characteristics. {#tbl-trip-characteristics}
 
+{{< embed notebooks/02_descriptive_analytics/02.1_descriptive-analytics_taxis.ipynb#fig-trip-characteristic-distributions >}}
+
+{{< embed notebooks/02_descriptive_analytics/02.1_descriptive-analytics_taxis.ipynb#fig-fare-hourly >}}
+
 | Maximum retained gap | Transitions retained | Share of non-negative gaps | Mean proxy | Median proxy |
 |:---|---:|---:|---:|---:|
 | 1 hour | 9,366,946 | 65.77% | 21.20 min | 15.00 min |
@@ -94,6 +104,10 @@ masking, the two coordinate resolutions).
 : Sensitivity of the consecutive-trip idle-time proxy. {#tbl-idle-sensitivity}
 
 {{< embed notebooks/02_descriptive_analytics/02.1_descriptive-analytics_taxis.ipynb#fig-idle-time-proxy >}}
+
+{{< pagebreak >}}
+
+## Descriptive Spatial Analytics: Tables and Hot Spots
 
 | Pickup area | Pickup trips | Drop-off area | Drop-off trips |
 |:---|---:|:---|---:|
