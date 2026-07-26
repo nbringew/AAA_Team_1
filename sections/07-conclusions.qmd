@@ -20,7 +20,7 @@ high-volume zones where forecast improvements have the greatest allocation value
 The charging experiment leads to a similar recommendation. Under EPEX pricing, the price-blind
 greedy policy achieved a 98.9% success rate and outperformed both DQN agents in mean reward
 after shortage penalties were included. Although the EPEX DQN reduced electricity
-costs, its 75.2% success rate is insufficient for fleet operations. Price-aware optimization
+costs, its 75.2% success rate is insufficient for fleet operations. This optimization
 should therefore operate only within hard minimum-SOC and departure-energy constraints. For
 vehicles returning regularly to a depot, private charging offers the greatest control over
 availability and dynamic tariffs; public fast charging remains useful as backup. The present

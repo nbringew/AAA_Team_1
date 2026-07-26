@@ -43,7 +43,7 @@ demand. However, its overall charging success rate is only 75.2%, compared with 
 greedy policy, showing that part of the saving results from insufficient reserve rather than
 better timing alone. The study therefore recommends a conservative operational architecture:
 use profile-based forecasts across most of the city, reserve specialized models for atypical
-high-demand zones, and introduce price-aware charging only with hard minimum-energy and
+high-demand zones, and introduce EPEX-based charging only with hard minimum-energy and
 departure-reliability constraints. The results constitute a proof of concept; deployment would
 require complete vehicle duty cycles, charging-infrastructure data, and more precise spatial
 observations.
