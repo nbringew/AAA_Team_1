@@ -109,14 +109,15 @@ maximum of each profile.](assets/figures/descriptive/hourly_demand_day_selection
 
 ## Descriptive Spatial Analytics: Tables and Hot Spots
 
-| Pickup area | Pickup trips | Drop-off area | Drop-off trips |
-|:---|---:|:---|---:|
-| Near North Side | 3,264,625 | Near North Side | 3,528,594 |
-| O'Hare | 2,985,521 | Loop | 2,452,298 |
-| Loop | 2,374,677 | Near West Side | 1,450,354 |
-| Near West Side | 1,467,354 | Lake View | 648,761 |
+| Community Area | Pickup trips | Drop-off trips |
+|:---|---:|---:|
+| Near North Side | 3,264,625 | 3,528,594 |
+| O'Hare | 2,985,521 | 579,319 |
+| Loop | 2,374,677 | 2,452,298 |
+| Near West Side | 1,467,354 | 1,450,354 |
 
-: Highest-volume Community Areas for pickups and drop-offs. {#tbl-community-demand}
+: Pickup and drop-off volumes for the four highest-volume pickup Community Areas.
+{#tbl-community-demand}
 
 | Time block | Leading pickup area | Pickup trips | Leading drop-off area | Drop-off trips |
 |:---|:---|---:|:---|---:|
@@ -129,6 +130,10 @@ maximum of each profile.](assets/figures/descriptive/hourly_demand_day_selection
 
 : Dominant Community Area by four-hour block. Pickups use start time and drop-offs use end time.
 {#tbl-spatial-time}
+
+{{< embed notebooks/02_descriptive_analytics/02.1_descriptive-analytics_taxis.ipynb#fig-trip-scope-weekday >}}
+
+{{< pagebreak >}}
 
 {{< embed notebooks/02_descriptive_analytics/02.3_descriptive-analytics_spatial.ipynb#fig-pickup-ca-4h >}}
 
@@ -151,6 +156,10 @@ maximum of each profile.](assets/figures/descriptive/hourly_demand_day_selection
 | 3 | Midway/Garfield Ridge | 2.6% | 201 | 101 m / 100 m |
 
 : Final three-component GMM hot spots. {#tbl-gmm-hotspots-summary}
+
+{{< pagebreak >}}
+
+{{< embed notebooks/02_descriptive_analytics/02.4_gaussian-mixture-model.ipynb#fig-hotspots-day-night >}}
 
 {{< pagebreak >}}
 

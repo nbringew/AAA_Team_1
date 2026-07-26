@@ -24,19 +24,23 @@ Trip distance, duration, and price are strongly right-skewed
 (@fig-trip-characteristic-distributions; @tbl-trip-characteristics). A typical trip has a median
 distance of 3.85 miles, lasts 16 minutes, and has a metered fare of USD 15.25. The corresponding
 means are higher because a smaller number of long and expensive trips pull them upward. Trip
-composition also varies by hour: distance, duration, and mean fare are lowest around 08:00,
-whereas the longest trips occur at 05:00 and mean fare peaks at 04:00
+composition also varies by hour: median distance and mean fare are lowest at 08:00, whereas
+median distance is highest at 05:00 and mean fare peaks at 04:00
 (@fig-fare-hourly). Short urban commuting trips may explain the morning trough, while a larger
 share of airport and cross-city trips is a plausible explanation for the early-morning peaks.
 These interpretations are descriptive and do not isolate location, surcharges, or traffic
 effects.
 
-Idle time is not directly recorded. It is approximated as the gap between a taxi's trip end and
-its next recorded trip start. Negative gaps are excluded, and gaps above four hours are treated
-as probable off-shift periods. The resulting 12,072,245 transitions have a mean gap of 44.49
-minutes and a median of 30 minutes. Because both values depend on the four-hour cutoff, the
-sensitivity analysis in @tbl-idle-sensitivity and @fig-idle-time-proxy should be read as a
-utilization proxy rather than a direct measure of vehicle availability.
+Idle time is not directly recorded in the dataset. We therefore approximate it as the time
+between the end of a taxi's recorded trip and the start of its next recorded trip. Negative gaps
+are excluded as implausible observations. Under the primary four-hour cutoff, gaps exceeding four
+hours are excluded because they are more likely to represent off-shift periods or incomplete trip
+records than regular between-trip idle time. This rule retains 12,072,245 transitions,
+corresponding to 84.76% of all non-negative consecutive-trip gaps. The retained gaps have a mean
+of 44.49 minutes and a median of 30 minutes. Since the resulting estimate depends on the selected
+cutoff, alternative thresholds are reported in @tbl-idle-sensitivity and visualized in
+@fig-idle-time-proxy. The measure should therefore be interpreted as a proxy for between-trip
+inactivity rather than a direct measurement of vehicle availability or utilization.
 
 ## Spatial Patterns and Resolution
 
@@ -52,14 +56,21 @@ The leading zones vary over time (@tbl-spatial-time). Near North Side dominates 
 drop-off blocks, with the Loop leading from 04:00--08:00. Origins and destinations must therefore
 be modeled separately, and fleet positioning should change over the day.
 
-Three different spatial resolutions were explored (@fig-pickup-ca-4h; @fig-pickup-tract-4h;
-@fig-pickup-h3-4h). Community areas are complete, recognizable operating zones
-but hide local variation; census tracts add finer detail but are available for only 43.17% of trips
-(6,245,422), since low-volume tracts are masked for privacy. H3 resolution 7 offers a uniform grid,
-but the anonymized data carry only 573 distinct pickup and 687 drop-off coordinate pairs, so mapping
-them to hexagons would invent spatial detail the source does not contain. Because demand is natively
-reported at community-area and census-tract resolution, H3 is kept only as a descriptive view and
-dropped for prediction, where a mismatched grid would distort the picture.
+Most trips have both their pickup and drop-off assigned to a Chicago Community Area across every
+weekday (@fig-trip-scope-weekday). The smaller comparison group contains trips for which at least
+one endpoint is outside Chicago or cannot be assigned unambiguously, so it should not be interpreted
+as a direct count of cross-boundary travel.
+
+Three different spatial resolutions were explored. Community areas are nearly complete,
+recognizable operating zones but hide local variation (@fig-pickup-ca-4h). Census tracts add finer
+spatial detail: pickup tract identifiers are available for 44.6% of trips, while the descriptive
+tract maps use the 6,245,422 trips (43.17%) for which both pickup and drop-off tract identifiers are
+available, since low-volume tracts are masked for privacy (@fig-pickup-tract-4h). H3 resolution 7
+offers a uniform grid (@fig-pickup-h3-4h), but the anonymized data carry only 573 distinct pickup
+and 687 drop-off coordinate pairs, so mapping them to hexagons would invent spatial detail the
+source does not contain. Because demand is natively reported at community-area and census-tract
+resolution, H3 is kept only as a descriptive view and dropped for prediction, where a mismatched
+grid would distort the picture.
 
 ## Gaussian-Mixture Hot Spots
 
@@ -75,7 +86,7 @@ the contiguous downtown area near the approximately 600-meter resolution limit. 
 density and component estimates are provided in @fig-gmm-hotspots and
 @tbl-gmm-hotspots-summary.
 
-The hot-spot locations remain stable over the day, but their importance changes. The city-center
-share is approximately 80% during 07:00--19:00 and 61% at night; O'Hare rises from 18% to 36%.
-This supports rebalancing between a stable set of downtown and airport zones rather than uniform
-city-wide coverage.
+The hot-spot locations remain stable over the day, but their importance changes
+(@fig-hotspots-day-night). The city-center share is approximately 80% during 07:00--19:00 and 61%
+at night; O'Hare rises from 18% to 36%. This supports rebalancing between a stable set of downtown
+and airport zones rather than uniform city-wide coverage.
