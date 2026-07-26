@@ -434,12 +434,6 @@ months.](assets/figures/prediction/yoy_demand_growth.png){#fig-yoy-demand width=
 
 ## Reinforcement Learning: Results
 
-![Action distribution on the original 4-action grid, 1,000 episodes (price-unaware DQN
-retrained with the notebook's original hyperparameters and seed for this comparison). Greedy
-spreads its decisions across all four power levels, while the DQN collapses onto 11 kW in 97%
-of them -- the degenerate habit that the refined grid in @tbl-stylized-grid
-corrects.](assets/figures/reinforcement/coarse_grid_action_distribution.png){#fig-coarse-grid-actions width="70%"}
-
 | Grid | Policy | Success rate | Mean reward |
 |---|---|---|---|
 | Original (4 actions) | Greedy | 98.9% | -2.581 |

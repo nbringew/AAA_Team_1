@@ -74,9 +74,9 @@ reliability metric, alongside mean reward and, under EPEX prices, mean charging 
 
 On the original four-action grid, the compressed cost tiers described above leave the
 price-unaware DQN with little reason to modulate power: it collapses onto a single action
-instead of spreading decisions the way greedy does (@fig-coarse-grid-actions), and it trails
-greedy on both success and reward. The refined seven-action grid restores graduated control and
-closes most of this gap (@tbl-stylized-grid).
+instead of spreading decisions the way greedy does, and it trails greedy on both success and
+reward. The refined seven-action grid restores graduated control and closes most of this gap
+(@tbl-stylized-grid).
 
 Under EPEX prices, with the refined grid, greedy, the price-unaware DQN, and the EPEX DQN are
 evaluated on the same paired episodes and billed at the same realized prices, so success rate,
