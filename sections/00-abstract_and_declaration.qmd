@@ -37,8 +37,8 @@ calendar profiles.
 
 A separate reinforcement-learning experiment models home charging as a finite-horizon decision
 problem under uncertain energy demand. Deep Q-Network agents choose charging power in 15-minute
-intervals and are compared with a price-blind greedy policy. Using EPEX day-ahead prices, the
-EPEX DQN reduces charging costs by 41.7% on episodes in which both strategies meet
+intervals and are compared with a price-blind greedy policy. Using EPEX day-ahead prices, an
+EPEX DQN agent reduces charging costs by 41.7% on episodes in which both strategies meet
 demand. However, its overall charging success rate is only 75.2%, compared with 98.9% for the
 greedy policy, showing that part of the saving results from insufficient reserve rather than
 better timing alone. The study therefore recommends a conservative operational architecture:
