@@ -3,15 +3,15 @@
 We predict taxi pickup demand -- the number of trips originating in a spatial unit within a fixed
 time window -- with two model families: Support Vector Regression (SVR) and feedforward neural
 networks (NN). Both are evaluated at community-area resolution in 4-hour and 1-hour windows; census
-tract (4-hour) is run with the neural network only, all due to computational cost. Community area at
-4-hour resolution is the default throughout, and the other resolutions are presented as deviations
-from it.
+tract (4-hour) is run with the neural network only, since finer resolution means more training rows
+and SVR does not scale to that. Community area at 4-hour resolution is the default
+throughout, and the other resolutions are presented as deviations from it.
 
 ## Modeling Approach
 
 Both families share one task framing: a single **pooled model per experiment**, trained across all
-spatial units at once, with spatial identity encoded as one-hot dummies rather than as separate
-per-unit models. The families are complementary: linear SVR is interpretable through its
+spatial units at once, with spatial identity encoded as one-hot dummies. For SVR at community area
+(4-hour) resolution, per-area models were also fitted separately as a check on this pooling choice. The families are complementary: linear SVR is interpretable through its
 coefficients, kernelized SVR captures nonlinear relationships (e.g. between spatial identity and
 time), and feedforward networks learn them far more flexibly, but at the cost of interpretability.
 
@@ -131,8 +131,9 @@ spiking demand onto whichever tract holds a community area's centroid.
 
 Only neural networks were run here (@tbl-tract): the shallow network reaches $-0.098$ (weighted RMSE
 113.77 vs the baseline's 100.99) and the deep network $-0.340$; traces and the per-tract skill map
-are in @fig-tract-nn-march-week and @fig-tract-nn-skillmap. SVR was not run at tract level because a
-per-tract one-hot encoding (up to 878 dummy variables) is computationally infeasible for kernel SVR.
+are in @fig-tract-nn-march-week and @fig-tract-nn-skillmap. SVR was not run at tract level: splitting
+the same window across 179 tracts instead of 77 areas pushes the row count well past what kernel SVR
+can handle.
 
 ## Discussion
 
