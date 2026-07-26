@@ -15,7 +15,7 @@ The project uses Python and `uv` for dependency management. From the repository 
 ```bash
 uv sync
 ```
-
+ 
 To make the environment available as a Jupyter kernel, run:
 
 ```bash
@@ -50,7 +50,7 @@ rerunning every notebook during rendering, but the following order reproduces th
 workflow:
 
 1. **Data collection and preparation** — `notebooks/01_data_collection/`
-   - `00_data_loading.ipynb`: Downloads/loads the raw Chicago taxi and weather data, checks data
+   - `01_data_loading.ipynb`: Downloads/loads the raw Chicago taxi and weather data, checks data
      completeness, applies the main cleaning pipeline, and writes the cleaned taxi dataset used
      by the subsequent notebooks.
 
