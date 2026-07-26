@@ -9,45 +9,34 @@ ride-hailing demand.
 Demand follows a clear daily and weekly cycle. The lowest-volume hour is 03:00, with an average
 of 62.96 pickups per observed day, while demand peaks at 17:00 with 1,194.63
 (@fig-hourly-demand-day-selection). Thursday is the busiest day (18,856 trips per day) and
-Sunday the quietest (12,591; @tbl-weekday-demand).
-Commuting, business activity, shopping, and after-work travel are plausible explanations for the
-weekday and late-afternoon concentration. To distinguish a strict weekend effect from
-Friday-evening leisure activity, the hourly profile is also evaluated for Saturday--Sunday and
-for the broader Friday--Sunday period. All three variants use average pickups per observed day,
-so their levels remain comparable despite covering different numbers of dates. The strict
-weekend profile reaches its minimum at 04:00 (86.66 pickups) and its maximum at 17:00 (921.17);
-including Friday shifts the minimum back to 03:00 (81.02) and raises the 17:00 maximum to
-1,047.20. Both remain below the all-day 17:00 peak of 1,194.63. Although weekend demand is
-relatively higher around midnight than the all-day profile, neither weekend definition produces
-a distinct late-night peak: the principal maximum remains at 17:00.
+Sunday the quietest (12,591; @tbl-weekday-demand). Weekend demand is lower overall and relatively
+stronger around midnight, but neither a strict Saturday--Sunday nor an extended Friday--Sunday
+definition produces a separate late-night peak; both still reach their maximum at 17:00.
+Commuting, business activity, and after-work travel are plausible explanations for the weekday
+and late-afternoon concentration.
 
-Temporal resolution determines how much of this pattern remains visible. Hourly bins retain the
-exact 17:00 peak; two- and three-hour bins progressively smooth local fluctuations; four-hour
-bins provide a more stable planning signal, with the highest volume from 16:00--20:00; and daily
-aggregation removes the intraday cycle (@fig-temporal-resolution). Hourly data are therefore
-preferable for short-term vehicle positioning, whereas four-hour windows are more suitable for
-fleet allocation.
+Temporal aggregation changes the operational signal (@fig-temporal-resolution). Hourly bins
+retain the exact 17:00 peak and are useful for short-term vehicle positioning, whereas wider
+bins smooth local fluctuations. Four-hour windows retain the broader 16:00--20:00 demand peak
+and provide a more stable signal for fleet allocation.
 
 Trip distance, duration, and price are strongly right-skewed
 (@fig-trip-characteristic-distributions; @tbl-trip-characteristics). A typical trip has a median
 distance of 3.85 miles, lasts 16 minutes, and has a metered fare of USD 15.25. The corresponding
-means are higher because a smaller number of long and expensive trips pull the averages upward.
-Trip composition also changes systematically over the day. At 08:00, trips have both the
-shortest median distance (2.26 miles) and duration (12.62 minutes), as well as the lowest mean
-fare (USD 18.54). The longest median distance and duration occur at 05:00 (11.67 miles and 19.60
-minutes), while the mean fare peaks at 04:00 (USD 32.62; @fig-fare-hourly). Short urban journeys
-associated with the morning commute are a plausible explanation for the 08:00 trough.
-Conversely, a larger share of airport and cross-city trips may explain the early-morning peaks,
-although the descriptive analysis does not isolate this effect from surcharges, traffic
-conditions, or differences in trip mix.
+means are higher because a smaller number of long and expensive trips pull them upward. Trip
+composition also varies by hour: distance, duration, and mean fare are lowest around 08:00,
+whereas the longest trips occur at 05:00 and mean fare peaks at 04:00
+(@fig-fare-hourly). Short urban commuting trips may explain the morning trough, while a larger
+share of airport and cross-city trips is a plausible explanation for the early-morning peaks.
+These interpretations are descriptive and do not isolate location, surcharges, or traffic
+effects.
 
 Idle time is not directly recorded. It is approximated as the gap between a taxi's trip end and
 its next recorded trip start. Negative gaps are excluded, and gaps above four hours are treated
-as probable off-shift periods. Under this rule, 12,072,245 transitions yield a mean idle-time
-proxy of 44.49 minutes and a median of 30 minutes. Because the estimate changes with the cutoff,
-alternative thresholds are reported in @tbl-idle-sensitivity and visualized in
-@fig-idle-time-proxy. It should be interpreted as a utilization proxy, not a direct measurement
-of vehicle availability.
+as probable off-shift periods. The resulting 12,072,245 transitions have a mean gap of 44.49
+minutes and a median of 30 minutes. Because both values depend on the four-hour cutoff, the
+sensitivity analysis in @tbl-idle-sensitivity and @fig-idle-time-proxy should be read as a
+utilization proxy rather than a direct measure of vehicle availability.
 
 ## Spatial Patterns and Resolution
 
