@@ -33,8 +33,8 @@ OpenStreetMap contributors, available under the Open Database License.
 the Fraunhofer ISE Energy-Charts API [@fraunhoferise2026energycharts], covering the
 German--Luxembourg bidding zone from January through March 2025 and converted from EUR/MWh to
 EUR/kWh. For each of the 90 days, prices between 14:00 and 16:00 are transformed into eight 15-minute
-values matching the charging decisions; these published prices are observable to the price-aware
-charging agent, while the price ultimately billed is simulated by adding a random short-term
+values matching the charging decisions; these published prices are observable to the EPEX DQN,
+while the price ultimately billed is simulated by adding a random short-term
 deviation (details in the reinforcement-learning section).
 
 **Granularity and limitations.** The cleaned taxi data contain 14,465,662 rows and 27 columns. For

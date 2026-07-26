@@ -2,7 +2,7 @@
 
 This project investigates how spatio-temporal demand analysis, machine-learning forecasts, and
 smart charging can support the operation of an electric taxi fleet in Chicago. The objective is
-to improve vehicle positioning and utilisation while ensuring that electric vehicles are
+to improve vehicle positioning and utilization while ensuring that electric vehicles are
 charged reliably and at reasonable cost. Chicago taxi trips are used as a proxy for urban
 ride-hailing demand, defined as the number of observed pickups within a spatial unit and time
 window. The analysis combines taxi records, hourly weather observations, official spatial
@@ -15,12 +15,12 @@ The descriptive analysis reveals strong and recurring demand patterns. Taxi acti
 at 03:00 and peaks at 17:00, while weekdays, particularly Thursdays, are substantially busier
 than weekends. Spatial demand is even more concentrated: Near North Side, O'Hare, the Loop, and
 Near West Side together account for 71.06% of pickups with a reported community area. A Gaussian
-Mixture Model further identifies three operational hot spots: the extended city centre, O'Hare,
+Mixture Model further identifies three operational hot spots: the extended city center, O'Hare,
 and the Midway/Garfield Ridge area. Although these locations remain stable, their relative
 importance changes during the day. Central Chicago dominates daytime demand, whereas O'Hare
 becomes more important during evening and overnight periods. These findings suggest that fleet
 allocation should focus on a small set of high-volume zones and rebalance vehicles between the
-city centre and airports over the course of the day.
+city center and airports over the course of the day.
 
 For demand prediction, Support Vector Regression and feedforward neural networks are trained at
 different spatial and temporal resolutions using calendar, weather, and spatial features. Their
@@ -38,11 +38,11 @@ calendar profiles.
 A separate reinforcement-learning experiment models home charging as a finite-horizon decision
 problem under uncertain energy demand. Deep Q-Network agents choose charging power in 15-minute
 intervals and are compared with a price-blind greedy policy. Using EPEX day-ahead prices, the
-price-aware agent reduces charging costs by 41.7% on episodes in which both strategies meet
+EPEX DQN reduces charging costs by 41.7% on episodes in which both strategies meet
 demand. However, its overall charging success rate is only 75.2%, compared with 98.9% for the
 greedy policy, showing that part of the saving results from insufficient reserve rather than
 better timing alone. The study therefore recommends a conservative operational architecture:
-use profile-based forecasts across most of the city, reserve specialised models for atypical
+use profile-based forecasts across most of the city, reserve specialized models for atypical
 high-demand zones, and introduce price-aware charging only with hard minimum-energy and
 departure-reliability constraints. The results constitute a proof of concept; deployment would
 require complete vehicle duty cycles, charging-infrastructure data, and more precise spatial
